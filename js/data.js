@@ -3,8 +3,9 @@
    Jugadores, sprites y escudos salen de la plantilla de Inazuma Run
    (roster-data.js) y se cargan desde inazumarun.es/assets. */
 
-var APP_VERSION = '0.3.0';
+var APP_VERSION = '0.4.0';
 var APP_NOTES = [
+  ['0.4.0', 'Más roguelike: objetos como en Slay the Spire, ventaja al azar al empezar, cofres, nodos misterio, eventos nuevos y 5 cartas de 0 TP. El rival sale con 6 jugadores y el balón sale de quien tira.'],
   ['0.3.0', 'Empiezas con 7 cartas y números pequeños: menos aguante, tiros y paradas para todos. Los rivales se hacen más fuertes en cada casilla del mapa y tu portero gana 1 de aguante por cada victoria.'],
   ['0.2.0', 'Mucho más sencillo: empiezas solo con Chut y Parada, sin posesión, pases ni regates. Los efectos llegan con las cartas nuevas. Los rivales anuncian tiro, muro, avance o presión.'],
   ['0.1.0', 'Primera prueba: 3 capitanes, 3 actos con jefe, 30 cartas, fichajes, eventos, tienda y vídeos de supertécnicas.']
@@ -190,7 +191,7 @@ var TEAMS = {
   prominence:{ n: 'Prominence', esc: 'prominence.png', gk: 'r179', st: 'r19', tech: 'Llamarada Atómica', vid: 'llamarada-atomica', res: 13, shot: [5, 7], muro: [1, 3], rasgo: 'llamas' },
   epsilon:  { n: 'Épsilon', esc: 'epsilon.png', gk: 'r54', st: 'r455', tech: 'Remate de Gaia', res: 16, shot: [5, 6], muro: [3, 4], rasgo: 'alius' },
   // Jefes (valores fijos, no se escalan)
-  royal:    { n: 'Royal Academy', esc: 'royal-academy.png', gk: 'r13', st: 'r22', tech: 'Tiro', res: 21, shot: [5, 7], muro: [3, 4], rasgo: 'kageyama', boss: 1,
+  royal:    { n: 'Royal Academy', esc: 'royal-academy.png', gk: 'r13', st: 'r22', tech: 'Tiro', res: 19, shot: [4, 6], muro: [3, 4], rasgo: 'kageyama', boss: 1,
               stech: 'Pingüino emperador n.º 2', spow: 10, muroTech: 'Escudo de Fuerza' },
   zeus:     { n: 'Zeus', esc: 'zeus.png', gk: 'r51', st: 'r20', tech: 'Tiro', res: 24, shot: [5, 7], muro: [3, 5], rasgo: 'nectar', boss: 1,
               stech: 'Sabiduría Divina', spow: 10, vid: 'sabiduria-divina', muroTech: 'Muralla Gigante', muroVid: 'muralla-gigante' },
@@ -241,3 +242,64 @@ var EVENTS = [
     d: 'Ray Dark te ofrece dinero a cambio de un pequeño favor. Nadie sale limpio de un trato con él.',
     o: [{ l: 'Aceptar', h: 'Ganas 70 monedas. Entran 2 Cansancio en tu mazo.', a: 'trato' }, { l: 'Rechazar', h: 'Recuperas 5 de Moral.', a: 'heal5' }] }
 ];
+var RIVAL_PLAYERS = {"r94":{"n":"Styx","pos":"DF","el":"Bosque","s":"r94.webp"},"r95":{"n":"Creepy","pos":"DF","el":"Viento","s":"r95.webp"},"r81":{"n":"Wolf","pos":"MC","el":"Montaña","s":"r81.png"},"r98":{"n":"Jiangshi","pos":"MC","el":"Viento","s":"r98.webp"},"r85":{"n":"Fishman","pos":"DF","el":"Bosque","s":"r85.webp"},"r86":{"n":"Toad","pos":"DF","el":"Bosque","s":"r86.webp"},"r84":{"n":"Chicken","pos":"MC","el":"Viento","s":"r84.png"},"r92":{"n":"Snake","pos":"DL","el":"Bosque","s":"r92.webp"},"r382":{"n":"Light Nobel","pos":"DF","el":"Bosque","s":"r382.webp"},"r552":{"n":"Marcus Train","pos":"DF","el":"Fuego","s":"r552.webp"},"r383":{"n":"Walter Valiant","pos":"MC","el":"Fuego","s":"r383.webp"},"r384":{"n":"Gus Gamer","pos":"DL","el":"Fuego","s":"r384.webp"},"r165":{"n":"Mark Hillvalley","pos":"DF","el":"Montaña","s":"r165.webp"},"r166":{"n":"Herb Sherman","pos":"DF","el":"Bosque","s":"r166.webp"},"r167":{"n":"Joe Small","pos":"MC","el":"Montaña","s":"r167.webp"},"r168":{"n":"Orville Newman","pos":"MC","el":"Viento","s":"r168.webp"},"r158":{"n":"Jim Hillfort","pos":"DF","el":"Viento","s":"r158.webp"},"r159":{"n":"Phil Wingate","pos":"DF","el":"Montaña","s":"r159.webp"},"r160":{"n":"Jupiter Jumper","pos":"MC","el":"Viento","s":"r160.webp"},"r161":{"n":"Sam Samurai","pos":"MC","el":"Bosque","s":"r161.webp"},"r152":{"n":"Philip Marvel","pos":"DF","el":"Montaña","s":"r152.png"},"r153":{"n":"Stronger","pos":"DF","el":"Fuego","s":"r153.png"},"r154":{"n":"Francis Tell","pos":"MC","el":"Bosque","s":"r154.png"},"r39":{"n":"Shadow Cimmerian","pos":"DL","el":"Bosque","s":"r39.png"},"r394":{"n":"Malcolm Night","pos":"DF","el":"Fuego","s":"r394.webp"},"r395":{"n":"Alfred Meenan","pos":"DF","el":"Bosque","s":"r395.webp"},"r236":{"n":"Bay Laurel","pos":"MC","el":"Montaña","s":"r236.webp"},"r397":{"n":"Marvin Murdock","pos":"DL","el":"Fuego","s":"r397.webp"},"r132":{"n":"Ganymede","pos":"DF","el":"Montaña","s":"r132.png"},"r633":{"n":"Connor Shuttle","pos":"DF","el":"Viento","s":"r633.webp"},"r15":{"n":"Jordan Greenway","pos":"MC","el":"Bosque","s":"r15.png"},"r450":{"n":"Diam","pos":"DL","el":"Fuego","s":"r450.webp"},"r122":{"n":"Gocker","pos":"DF","el":"Montaña","s":"r122.png"},"r183":{"n":"Claire Lesnow","pos":"DF","el":"Viento","s":"r183.webp"},"r595":{"n":"Dawson Foxx","pos":"MC","el":"Viento","s":"r595.webp"},"r181":{"n":"Denzel Freezer","pos":"DL","el":"Montaña","s":"r181.webp"},"r123":{"n":"Bomber","pos":"DF","el":"Fuego","s":"r123.png"},"r180":{"n":"Val Flamewood","pos":"DF","el":"Fuego","s":"r180.webp"},"r125":{"n":"Heat","pos":"MC","el":"Fuego","s":"r125.png"},"r597":{"n":"Nigel August","pos":"DL","el":"Bosque","s":"r597.webp"},"r456":{"n":"Kenville","pos":"DF","el":"Bosque","s":"r456.webp"},"r598":{"n":"Anna Mole","pos":"DF","el":"Bosque","s":"r598.webp"},"r457":{"n":"Fedora","pos":"MC","el":"Bosque","s":"r457.webp"},"r55":{"n":"Zeke Valanche","pos":"DL","el":"Bosque","s":"r55.png"},"r16":{"n":"Bobby Shearer","pos":"DF","el":"Bosque","s":"r16.png"},"r537":{"n":"Peter Drent","pos":"DF","el":"Montaña","s":"r537.webp"},"r131":{"n":"Alan Master","pos":"MC","el":"Bosque","s":"r131.png"},"r185":{"n":"Daniel Hatch","pos":"DL","el":"Bosque","s":"r185.webp"},"r102":{"n":"Apollo","pos":"DF","el":"Bosque","s":"r102.png"},"r103":{"n":"Hephestus","pos":"DF","el":"Fuego","s":"r103.png"},"r106":{"n":"Hermes","pos":"MC","el":"Bosque","s":"r106.png"},"r108":{"n":"Demeter","pos":"DL","el":"Fuego","s":"r108.png"},"r111":{"n":"Gele","pos":"DF","el":"Viento","s":"r111.png"},"r112":{"n":"Kiburn","pos":"DF","el":"Fuego","s":"r112.png"},"r118":{"n":"Wittz","pos":"DL","el":"Bosque","s":"r118.png"}};
+var TEAM_XI = {"occult":["r94","r95","r81","r98"],"wild":["r85","r86","r84","r92"],"otaku":["r382","r552","r383","r384"],"farm":["r165","r166","r167","r168"],"shuriken":["r158","r159","r160","r161"],"brain":["r152","r153","r154","r39"],"kirkwood":["r394","r395","r236","r397"],"geminis":["r132","r633","r15","r450"],"polvo":["r122","r183","r595","r181"],"prominence":["r123","r180","r125","r597"],"epsilon":["r456","r598","r457","r55"],"royal":["r16","r537","r131","r185"],"zeus":["r102","r103","r106","r108"],"genesis":["r111","r112","r15","r118"]};
+
+/* ---------- 0.4.0: alineaciones rivales, objetos, ventajas y más cartas de 0 ---------- */
+for (var _rp in RIVAL_PLAYERS) if (!PLAYERS[_rp]) PLAYERS[_rp] = RIVAL_PLAYERS[_rp];
+for (var _t in TEAM_XI) if (TEAMS[_t]) TEAMS[_t].xi = TEAM_XI[_t];
+
+// Cartas de 0 TP
+CARDS.toque_primeras = { n: 'Toque de primeras', t: 'tiro', c: 0, r: 'C', p: 'r46', v: { pow: 2, draw: 1 }, u: { pow: 4, draw: 1 } };
+CARDS.despeje = { n: 'Despeje', t: 'defensa', c: 0, r: 'C', p: 'r06', v: { par: 2 }, u: { par: 4 } };
+CARDS.grito = { n: 'Grito de ánimo', t: 'tactica', c: 0, r: 'U', p: 'r01', v: { conc: 1, agota: 1 }, u: { conc: 2, agota: 1 } };
+CARDS.finta = { n: 'Finta', t: 'tactica', c: 0, r: 'C', p: 'r03', v: { vul: 1 }, u: { vul: 1, draw: 1 } };
+CARDS.contragolpe = { n: 'Contragolpe', t: 'tiro', c: 0, r: 'U', p: 'r16', v: { pow: 0, parpow: 1 }, u: { pow: 3, parpow: 1 } };
+POOL.push('toque_primeras', 'despeje', 'grito', 'finta', 'contragolpe');
+
+/* Objetos: efecto pasivo para toda la carrera. r: C común, U poco común, B de jefe */
+var RELICS = {
+  neumatico:  { n: 'Neumático de entrenamiento', i: '🏋️', r: 'C', d: 'Empiezas cada partido con 4 de Parada.' },
+  cuaderno:   { n: 'Cuaderno del abuelo', i: '📓', r: 'C', d: 'Robas 2 cartas más en el primer turno de cada partido.' },
+  silbato:    { n: 'Megáfono del entrenador', i: '📣', r: 'C', d: 'Tu primer turno de cada partido tiene 1 TP más.' },
+  isotonica:  { n: 'Bebida isotónica', i: '🧃', r: 'C', d: 'Al ganar un partido recuperas 4 de Moral.' },
+  guantes:    { n: 'Guantes de portero', i: '🧤', r: 'C', d: 'Tu portero gana 4 de aguante máximo.' },
+  hucha:      { n: 'Hucha del club', i: '🐷', r: 'C', d: 'Ganas 12 monedas más por cada victoria.' },
+  ramen:      { n: 'Vale de ramen', i: '🍜', r: 'C', d: 'Al descansar recuperas 8 de Moral más.' },
+  cinta:      { n: 'Cinta de Mark', i: '🎀', r: 'C', d: 'Cada carta que da Parada da 1 más.' },
+  banda:      { n: 'Brazalete de capitán', i: '🎗️', r: 'U', d: 'Empiezas cada partido con 1 de Concentración.' },
+  botas:      { n: 'Botas nuevas', i: '👟', r: 'U', d: 'Tu primer tiro de cada partido suma 5.' },
+  balon:      { n: 'Balón firmado', i: '⚽', r: 'U', d: 'Cada vez que marcas, robas 1 carta.' },
+  brazalete:  { n: 'Muñequera del Raimon', i: '💪', r: 'U', d: 'Cuando te marcan, tu siguiente turno tiene 1 TP más.' },
+  espinilleras: { n: 'Espinilleras', i: '🛡️', r: 'U', d: 'La primera vez que te iban a marcar en cada partido, tu portero aguanta con 1.' },
+  pizarra:    { n: 'Pizarra táctica', i: '📋', r: 'U', d: 'Cada carta de 0 TP que juegas suma 1 a tu próximo tiro.' },
+  gafas:      { n: 'Gafas de Jude', i: '🥽', r: 'U', d: 'Tus tiros con ventaja de elemento suman 2.' },
+  bufanda:    { n: 'Bufanda de Shawn', i: '🧣', r: 'U', d: 'Cuando desorientas al portero rival, dura 1 turno más.' },
+  meteorito:  { n: 'Piedra Alius', i: '☄️', r: 'B', d: 'Tienes 1 TP más cada turno. Cada gol encajado te quita 2 de Moral más.' },
+  contrato:   { n: 'Contrato de Ray Dark', i: '📜', r: 'B', d: 'Tienes 1 TP más cada turno. Cada partido empieza con 1 Cansancio en tu mazo.' },
+  botas_axel: { n: 'Botas de fuego', i: '🔥', r: 'B', d: 'Tienes 1 TP más cada turno. Descansar ya no te cura.' }
+};
+
+/* Ventajas antes de la primera casilla: se ofrecen 3 al azar */
+var BOONS = [
+  { id: 'relicC', t: 'Un objeto común al azar' },
+  { id: 'remove', t: 'Quita una carta de tu mazo' },
+  { id: 'rare', t: 'Una carta rara al azar' },
+  { id: 'keeper', t: 'Tu portero gana 3 de aguante máximo' },
+  { id: 'coins', t: 'Ganas 60 monedas' },
+  { id: 'up2', t: 'Mejora 2 cartas al azar' },
+  { id: 'relicU', t: 'Un objeto poco común, pero pierdes 8 de Moral' },
+  { id: 'cards3', t: 'Elige 1 de 3 cartas poco comunes' }
+];
+
+EVENTS.push(
+  { id: 'apuesta', t: 'Apuesta en el callejón', p: null,
+    d: 'Unos chavales apuestan a que no metes el balón en una papelera desde veinte metros.',
+    o: [{ l: 'Apostar', h: 'Mitad y mitad: ganas 50 monedas o pierdes 6 de Moral.', a: 'apuesta' }, { l: 'Pasar', h: 'No pasa nada.', a: 'none' }] },
+  { id: 'perdido', t: 'Objeto perdido', p: null,
+    d: 'En el vestuario hay una bolsa olvidada. Dentro hay algo que podría servirte.',
+    o: [{ l: 'Quedártelo', h: 'Ganas un objeto al azar. Entra 1 Cansancio en tu mazo.', a: 'perdido' }, { l: 'Devolverlo', h: 'Recuperas 6 de Moral.', a: 'heal6' }] },
+  { id: 'penaltis', t: 'Tanda de penaltis', p: 'r01',
+    d: 'Mark te reta a una tanda de penaltis contra él. Si le marcas, te enseña algo.',
+    o: [{ l: 'Tirar', h: 'Mitad y mitad: carta rara al azar o pierdes 5 de Moral.', a: 'penaltis' }, { l: 'Mirar', h: 'Mejora una carta al azar.', a: 'upOne' }] }
+);

@@ -621,3 +621,30 @@ body[data-screen="battle"] { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* 0.4.0: objetos, cofres y campo 6 contra 6 */
+.relics { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 0 0 4px; }
+.relic { width: 36px; height: 36px; border-radius: 10px; font-size: 20px; line-height: 1; display: grid; place-items: center; background: rgba(255, 154, 60, .12); border: 1px solid rgba(255, 154, 60, .35); }
+.relics.mini { margin: 0; gap: 3px; }
+.relics.mini .relic { width: 24px; height: 24px; font-size: 14px; border-radius: 7px; }
+.big-ic { font-size: 30px; line-height: 1; flex: none; }
+.relic-get { display: flex; gap: 12px; align-items: center; text-align: left; max-width: 420px; margin: 12px auto; padding: 12px 14px; border-radius: 14px; background: rgba(255, 154, 60, .12); border: 1px solid rgba(255, 154, 60, .4); animation: pop .3s; }
+.relic-get > span { font-size: 40px; line-height: 1; }
+.relic-get b { font-size: 16px; }
+.relic-get p { margin: 2px 0 0; font-size: 13px; color: #c8d5f5; }
+.boss-relics { display: grid; gap: 10px; max-width: 520px; margin: 10px auto 16px; }
+.boss-relics .opt .big-ic { font-size: 34px; }
+.shop-relics { display: grid; gap: 10px; max-width: 560px; margin: 0 auto 16px; }
+.shop-relic { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.shop-relic > div { flex: 1; min-width: 0; }
+.shop-relic b { font-size: 14px; }
+.shop-relic p { margin: 2px 0 0; font-size: 12.5px; color: #c8d5f5; }
+.shop-relic.sold { opacity: .4; }
+.relic-row .big-ic { width: 40px; text-align: center; }
+.chest-art { width: 120px; height: 120px; margin: 20px auto 6px; color: #ff9a3c; filter: drop-shadow(0 0 24px rgba(255, 154, 60, .5)); animation: bob1c 1.6s ease-in-out infinite; }
+.chest-art svg { width: 100%; height: 100%; }
+.chest-art.open { animation: pop .4s; color: var(--yellow); }
+@keyframes bob1c { 50% { transform: translateY(-8px) rotate(-3deg); } }
+.toast.info { background: rgba(63, 160, 255, .95); }
+.fp.act .av { transform: scale(1.35); box-shadow: 0 0 0 3px var(--yellow), 0 0 14px rgba(255, 207, 31, .8); transition: transform .15s; }
+.opt[disabled] { opacity: .45; }

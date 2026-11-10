@@ -24,7 +24,8 @@ var ICON = {
   swap: '<svg viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h13M17 12l4 4-4 4M21 16H8" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   boot: '<svg viewBox="0 0 24 24"><path d="M5 3h6v8l7 3c2 .8 3 2 3 4v2H3V4z" fill="currentColor"/></svg>',
   hand: '<svg viewBox="0 0 24 24"><path d="M7 11V5a1.5 1.5 0 0 1 3 0v5V3.5a1.5 1.5 0 0 1 3 0V10V4.5a1.5 1.5 0 0 1 3 0V11V7a1.5 1.5 0 0 1 3 0v7c0 4.4-3 8-7.5 8S5 19 4 16l-1.6-3.4a1.4 1.4 0 0 1 2.4-1.4z" fill="currentColor"/></svg>',
-  up: '<svg viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9H9v-9H4z" fill="currentColor"/></svg>'
+  up: '<svg viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9H9v-9H4z" fill="currentColor"/></svg>',
+  chest: '<svg viewBox="0 0 24 24"><path d="M3 10a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v1H3z" fill="currentColor" opacity=".75"/><rect x="3" y="11" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="10.5" y="9.5" width="3" height="4" rx=".8" fill="#0c1631"/></svg>'
 };
 var NODE_INFO = {
   partido: { n: 'Partido', icon: ICON.ball, c: '#43c6ff' },
@@ -32,6 +33,7 @@ var NODE_INFO = {
   evento: { n: 'Evento', icon: ICON.q, c: '#b583ff' },
   tienda: { n: 'Tienda', icon: ICON.shop, c: '#ffcf3a' },
   descanso: { n: 'Descanso', icon: ICON.rest, c: '#3ddc84' },
+  cofre: { n: 'Cofre', icon: ICON.chest, c: '#ff9a3c' },
   jefe: { n: 'Jefe', icon: ICON.bolt, c: '#ffcf3a' }
 };
 var TYPE_ICON = { tiro: ICON.boot, defensa: ICON.hand, tactica: ICON.bolt, estado: ICON.q };
@@ -50,7 +52,9 @@ function cardText(c, live) {
   if (d.t === 'tiro') {
     var pow = v.pow, cls = '';
     if (live && B_()) { var sp = shotPower(c); pow = sp.final; cls = sp.final > v.pow ? 'hi' : sp.final < v.pow ? 'lo' : ''; }
-    p.push('Tiro <b class="num ' + cls + '">' + pow + '</b>' + (v.hits > 1 ? ' x' + v.hits : '') + '.');
+    if (v.parpow && !(live && B_())) p.push('Tiro igual a tu Parada' + (v.pow ? ' +' + v.pow : '') + '.');
+    else p.push('Tiro <b class="num ' + cls + '">' + pow + '</b>' + (v.hits > 1 ? ' x' + v.hits : '') + '.');
+    if (v.parpow && live && B_()) p.push('Suma tu Parada.');
     if (v.pierce) p.push('Ignora el muro.');
     if (v.ps) p.push('+' + v.ps + ' por cada tiro que ya hayas hecho este turno.');
     if (v.axel) p.push('Combinada: +' + v.axel + ' si tienes a Axel Blaze.');
@@ -111,10 +115,13 @@ function render() {
   else if (s === 'event') h = viewEvent();
   else if (s === 'end') h = viewEnd();
   else if (s === 'gallery') h = viewGallery();
+  else if (s === 'boon') h = viewBoon();
+  else if (s === 'chest') h = viewChest();
   $app.innerHTML = h;
   renderModal();
   if (s === 'battle') layoutHand();
   if (s === 'map') scrollMap();
+  if (G.toastMsg) { pushFx({ k: 'toast', t: G.toastMsg, c: 'info' }); G.toastMsg = null; playFx(); }
   if (s === 'map' && G.ui.actIntro) { G.ui.actIntro = false; pushFx({ k: 'banner', t: 'Acto ' + (G.run.act + 1), s: ACTS[G.run.act].n, c: 'gold' }); playFx(); }
 }
 
@@ -177,6 +184,11 @@ function viewCaptain() {
 }
 
 /* ---------- HUD de carrera ---------- */
+function relicStrip(cls) {
+  var rl = (G.run && G.run.relics) || [];
+  if (!rl.length) return '';
+  return '<div class="relics ' + (cls || '') + '">' + rl.map(function (id) { return '<button class="relic" data-a="relic" data-id="' + id + '" title="' + esc(RELICS[id].n) + '">' + RELICS[id].i + '</button>'; }).join('') + '</div>';
+}
 function hud() {
   var r = G.run;
   var pct = Math.round(r.moral / r.moralMax * 100);
@@ -186,6 +198,7 @@ function hud() {
     '<div class="hud-btns">' +
       '<button class="icon-btn" data-a="deck" title="Mazo">' + ICON.deck + '<small>' + r.deck.length + '</small></button>' +
       '<button class="icon-btn" data-a="team" title="Equipo">' + ICON.team + '<small>' + r.team.length + '</small></button>' +
+      '<button class="icon-btn" data-a="relics" title="Objetos">' + ICON.chest + '<small>' + (r.relics || []).length + '</small></button>' +
       '<button class="icon-btn" data-a="opts" title="Opciones">' + ICON.gear + '</button>' +
     '</div>' +
   '</header>';
@@ -219,12 +232,12 @@ function viewMap() {
     }
     return '<button class="node t-' + n.type + st + '" data-a="node" data-k="' + k + '" style="left:' + p.x + '%;top:' + p.y + 'px;--nc:' + info.c + '" aria-label="' + info.n + '"><i>' + info.icon + '</i></button>';
   }).join('');
-  return '<div class="screen mapscr">' + hud() +
+  return '<div class="screen mapscr">' + hud() + relicStrip() +
     '<div class="act-title"><small>Acto ' + (r.act + 1) + ' de ' + ACTS.length + '</small><b>' + A.n + '</b></div>' +
     '<div class="map-scroll" id="mapScroll"><div class="map" style="height:' + H + 'px">' +
       '<svg class="map-lines" viewBox="0 0 100 ' + H + '" preserveAspectRatio="none">' + lines + '</svg>' + nodes +
     '</div></div>' +
-    '<footer class="legend">' + ['partido', 'elite', 'evento', 'tienda', 'descanso'].map(function (t) {
+    '<footer class="legend">' + ['partido', 'elite', 'evento', 'cofre', 'tienda', 'descanso'].map(function (t) {
       return '<span style="--nc:' + NODE_INFO[t].c + '"><i>' + NODE_INFO[t].icon + '</i>' + NODE_INFO[t].n + '</span>';
     }).join('') + '</footer>' +
   '</div>';
@@ -309,7 +322,7 @@ function viewBattle() {
     '</section>' +
     '<section class="pitch">' +
       '<div class="field"><div class="half"></div>' + fieldPlayers(B) + '<div class="ballpos">' + ICON.ball + '</div></div>' +
-      (chips ? '<div class="chips">' + chips + '</div>' : '') +
+      ((chips || (r.relics || []).length) ? '<div class="chips">' + relicStrip('mini') + chips + '</div>' : '') +
     '</section>' +
     '<section class="me">' +
       '<div class="keeper me-k" id="meK">' + avatar(MY_KEEPER, 'md') +
@@ -332,22 +345,25 @@ function viewBattle() {
   '</div>';
 }
 
-var POS_X = { PR: 6, DF: 17, MC: 29, DL: 41 };
-function fieldPlayers(B) {
-  var byPos = {};
-  G.run.team.forEach(function (pid) { var p = PLAYERS[pid].pos; (byPos[p] = byPos[p] || []).push(pid); });
-  var h = '';
+var POS_X = { PR: 5, DF: 16, MC: 28, DL: 40 };
+function fieldSide(ids, rival) {
+  var byPos = {}, h = '';
+  ids.forEach(function (pid) { var p = PLAYERS[pid].pos; (byPos[p] = byPos[p] || []).push(pid); });
   Object.keys(byPos).forEach(function (pos) {
     var arr = byPos[pos];
     arr.forEach(function (pid, i) {
       var y = (i + 1) / (arr.length + 1) * 100;
-      h += '<span class="fp" style="left:' + POS_X[pos] + '%;top:' + y + '%">' + avatar(pid, 'xs') + '</span>';
+      var x = rival ? 100 - POS_X[pos] : POS_X[pos];
+      h += '<span class="fp' + (rival ? ' rv' : '') + '" data-' + (rival ? 'rp' : 'p') + '="' + pid + '" style="left:' + x + '%;top:' + y + '%">' + avatar(pid, 'xs') + '</span>';
     });
   });
-  var T = B.T;
-  h += '<span class="fp rv" style="left:94%;top:50%">' + avatar(T.gk, 'xs') + '</span>';
-  h += '<span class="fp rv" style="left:64%;top:58%">' + avatar(T.st, 'xs') + '</span>';
   return h;
+}
+function fieldPlayers(B) {
+  var T = B.T;
+  var mine = G.run.team.slice(0, 7);
+  var theirs = [T.gk].concat(T.xi || TEAMS[B.tid].xi || [], [T.st]).filter(function (p, i, a) { return PLAYERS[p] && a.indexOf(p) === i; });
+  return fieldSide(mine, false) + fieldSide(theirs, true);
 }
 
 function previewHTML(B) {
@@ -381,6 +397,9 @@ window.addEventListener('resize', function () { if (G.screen === 'battle') layou
 /* ---------- recompensa ---------- */
 function viewReward() {
   var r = G.run, rw = r.reward; if (!rw) return '';
+  if (rw.start) {
+    return '<div class="screen reward"><h2 class="center">Antes del torneo</h2><h3 class="center">Elige una carta</h3><div class="picks">' + rw.cards.map(pickHTML).join('') + '</div><div class="center"><button class="btn ghost" data-a="skipcards">Saltar</button></div></div>';
+  }
   var T = TEAMS[rw.team];
   if (rw.lost) {
     return '<div class="screen reward"><header class="win-head lost">' + crestImg('raimon.webp') + '<div><small>Derrota</small><b>' + rw.score + '</b><span>contra ' + esc(T.n) + '</span></div>' + crestImg(T.esc) + '</header>' +
@@ -389,16 +408,23 @@ function viewReward() {
       '<div class="center"><button class="btn primary" data-a="skipcards">Seguir</button></div></div>';
   }
   var h = '<div class="screen reward"><header class="win-head">' + crestImg('raimon.webp') + '<div><small>Victoria</small><b>' + rw.score + '</b><span>contra ' + esc(T.n) + '</span></div>' + crestImg(T.esc) + '</header>' +
+    (rw.relic ? '<div class="relic-get"><span>' + RELICS[rw.relic].i + '</span><div><b>' + esc(RELICS[rw.relic].n) + '</b><p>' + esc(RELICS[rw.relic].d) + '</p></div></div>' : '') +
     '<p class="center gain"><i>' + ICON.coin + '</i>+' + rw.coins + ' monedas' + (rw.boss ? ' · +10 Moral' : '') + ' · Portero +1 aguante</p>';
   if (rw.sign && rw.sign.length) {
     h += '<h3 class="center">' + (rw.boss ? 'Ficha a una estrella rival' : 'Fichaje') + '</h3><div class="signs">' + rw.sign.map(signHTML).join('') + '</div>' +
       '<div class="center"><button class="btn ghost" data-a="skipsign">Saltar</button></div>';
+  } else if (rw.bossRelics && rw.bossRelics.length) {
+    h += '<h3 class="center">Objeto de campeón</h3><div class="boss-relics">' + rw.bossRelics.map(function (id) {
+      return '<button class="opt" data-a="bossrelic" data-id="' + id + '"><span class="big-ic">' + RELICS[id].i + '</span><b>' + esc(RELICS[id].n) + '</b><span>' + esc(RELICS[id].d) + '</span></button>';
+    }).join('') + '</div>';
   } else if (rw.cards) {
-    h += '<h3 class="center">Elige una carta</h3><div class="picks">' + rw.cards.map(function (id) {
-      return '<button class="pick" data-a="take" data-id="' + id + '">' + cardHTML(id, { tilt: true }) + '</button>';
-    }).join('') + '</div><div class="center"><button class="btn ghost" data-a="skipcards">Saltar</button></div>';
+    h += '<h3 class="center">Elige una carta</h3><div class="picks">' + rw.cards.map(pickHTML).join('') + '</div><div class="center"><button class="btn ghost" data-a="skipcards">Saltar</button></div>';
   }
   return h + '</div>';
+}
+function pickHTML(id) {
+  var up = /\+$/.test(id);
+  return '<button class="pick" data-a="take" data-id="' + id + '">' + cardHTML({ id: id.replace('+', ''), up: up, u: '' }, { tilt: true }) + '</button>';
 }
 function signHTML(pid, extraBtn) {
   var p = PLAYERS[pid], s = SIGNINGS[pid];
@@ -415,7 +441,7 @@ function viewRest() {
   return '<div class="screen rest">' + hud() +
     '<div class="rest-box"><div class="rest-art">' + avatar('r01', 'xl') + '</div><h2>Vestuario</h2><p class="dim">Un respiro antes del siguiente partido.</p>' +
     '<div class="rest-opts">' +
-      '<button class="opt" data-a="restheal"><i>' + ICON.rest + '</i><b>Descansar</b><span>Recuperas ' + heal + ' de Moral</span></button>' +
+      (hasR('botas_axel') ? '<button class="opt" disabled><i>' + ICON.rest + '</i><b>Descansar</b><span>Tus Botas de fuego no te dejan</span></button>' : '<button class="opt" data-a="restheal"><i>' + ICON.rest + '</i><b>Descansar</b><span>Recuperas ' + (heal + (hasR('ramen') ? 8 : 0)) + ' de Moral</span></button>') +
       '<button class="opt" data-a="resttrain"><i>' + ICON.up + '</i><b>Entrenar</b><span>Mejora una carta</span></button>' +
     '</div></div></div>';
 }
@@ -428,6 +454,12 @@ function viewShop() {
       return '<div class="shop-item' + (x.sold ? ' sold' : '') + '">' + cardHTML(x.id, { tilt: !x.sold }) +
         (x.sold ? '<span class="price">Vendida</span>' : '<button class="price' + (r.coins < x.price ? ' poor' : '') + '" data-a="buy" data-i="' + i + '"><i>' + ICON.coin + '</i>' + x.price + '</button>') + '</div>';
     }).join('') + '</div>';
+  if (s.relics && s.relics.length) {
+    h += '<h3 class="center">Objetos</h3><div class="shop-relics">' + s.relics.map(function (x, i) {
+      return '<div class="shop-relic' + (x.sold ? ' sold' : '') + '"><span class="big-ic">' + RELICS[x.id].i + '</span><div><b>' + esc(RELICS[x.id].n) + '</b><p>' + esc(RELICS[x.id].d) + '</p></div>' +
+        (x.sold ? '<span class="price">Vendido</span>' : '<button class="price' + (r.coins < x.price ? ' poor' : '') + '" data-a="buyrelic" data-i="' + i + '"><i>' + ICON.coin + '</i>' + x.price + '</button>') + '</div>';
+    }).join('') + '</div>';
+  }
   if (s.sign && !s.signSold) {
     h += '<h3 class="center">Jugador libre</h3><div class="signs one">' + signHTML(s.sign,
       '<button class="btn primary' + (r.coins < s.signPrice ? ' poor' : '') + '" data-a="buysign"><i>' + ICON.coin + '</i>' + s.signPrice + '</button>') + '</div>';
@@ -448,6 +480,28 @@ function viewEvent() {
     (r.event.result ? '<p class="ev-res">' + esc(r.event.result) + '</p><button class="btn primary" data-a="leave">Seguir</button>' :
       '<div class="ev-opts">' + e.o.map(function (o, i) { return '<button class="opt" data-a="evo" data-i="' + i + '"><b>' + o.l + '</b><span>' + o.h + '</span></button>'; }).join('') + '</div>') +
   '</div></div>';
+}
+
+/* ---------- ventaja inicial ---------- */
+function viewBoon() {
+  var r = G.run; if (!r.boons) { return ''; }
+  return '<div class="screen boon">' + hud() + '<div class="ev-box"><div class="ev-art">' + avatar(r.cap, 'xl') + '</div>' +
+    '<h2>Antes del torneo</h2><p>El entrenador te ofrece una ventaja para empezar. Elige una.</p>' +
+    '<div class="ev-opts">' + r.boons.map(function (id) {
+      var b = BOONS.filter(function (x) { return x.id === id; })[0];
+      return '<button class="opt" data-a="boon" data-id="' + id + '"><b>' + esc(b.t) + '</b></button>';
+    }).join('') + '</div></div></div>';
+}
+
+/* ---------- cofre ---------- */
+function viewChest() {
+  var r = G.run, ch = r.chest; if (!ch) return '';
+  var h = '<div class="screen chest">' + hud() + '<div class="ev-box"><div class="chest-art' + (ch.opened ? ' open' : '') + '">' + ICON.chest + '</div><h2>Cofre del club</h2>';
+  if (!ch.opened) h += '<p class="dim">Alguien ha dejado un cofre en el vestuario.</p><button class="btn primary big" data-a="openchest">Abrir</button>';
+  else if (ch.relic) h += '<div class="relic-get"><span>' + RELICS[ch.relic].i + '</span><div><b>' + esc(RELICS[ch.relic].n) + '</b><p>' + esc(RELICS[ch.relic].d) + '</p></div></div><p class="center gain"><i>' + ICON.coin + '</i>+' + ch.coins + ' monedas</p><button class="btn primary" data-a="leave">Seguir</button>';
+  else if (ch.sign && !ch.signed) h += '<p class="dim">Dentro hay una carta de fichaje.</p><div class="signs one">' + signHTML(ch.sign, '<button class="btn primary" data-a="chestsign">Fichar</button>') + '</div><button class="btn ghost" data-a="leave">Dejarlo</button>';
+  else h += '<p class="dim">Fichaje hecho.</p><button class="btn primary" data-a="leave">Seguir</button>';
+  return h + '</div></div>';
 }
 
 /* ---------- final ---------- */
@@ -492,6 +546,8 @@ function renderModal() {
   else if (m.k === 'sign') h = '<h2>Elige fichaje</h2><div class="signs">' + m.opts.map(function (p) { return signHTML(p); }).join('') + '</div>';
   else if (m.k === 'confirmUp') h = modalConfirmUp(m);
   else if (m.k === 'rasgo') h = modalRasgo();
+  else if (m.k === 'relics') h = modalRelics(null);
+  else if (m.k === 'relic') h = modalRelics(m.id);
   else if (m.k === 'abandon') h = '<h2>¿Abandonar la carrera?</h2><p class="dim">Perderás todo el progreso de esta carrera.</p><div class="row"><button class="btn danger" data-a="abandonok">Abandonar</button><button class="btn ghost" data-a="close">Seguir</button></div>';
   var closable = !(m.k === 'sign' || (m.k === 'deck' && m.mode !== 'view' && m.forced));
   $modal.className = 'on';
@@ -523,11 +579,20 @@ function modalTeam() {
     return '<div class="tm" style="--ec:' + ELEM_INFO[p.el].c + '">' + avatar(pid, 'md') + '<div><b>' + p.n + ' <small>' + p.pos + '</small>' + elemIcon(p.el) + '</b><p>' + desc + '</p></div></div>';
   }).join('') + '</div>';
 }
+function modalRelics(only) {
+  var rl = only ? [only] : ((G.run && G.run.relics) || []);
+  if (!rl.length) return '<h2>Objetos</h2><p class="dim">Aún no tienes objetos. Salen de cofres, élites, la tienda y los jefes.</p>';
+  return '<h2>' + (only ? 'Objeto' : 'Tus objetos') + '</h2><div class="team-list">' + rl.map(function (id) {
+    var R = RELICS[id];
+    return '<div class="tm relic-row"><span class="big-ic">' + R.i + '</span><div><b>' + esc(R.n) + (R.r === 'B' ? ' <small>Campeón</small>' : '') + '</b><p>' + esc(R.d) + '</p></div></div>';
+  }).join('') + '</div>';
+}
 function modalOpts() {
   return '<h2>Opciones</h2><div class="opts">' +
     '<button class="toggle' + (G.opts.sound ? ' on' : '') + '" data-a="tsound"><span>Sonido</span><i></i></button>' +
     '<button class="toggle' + (G.opts.video ? ' on' : '') + '" data-a="tvideo"><span>Vídeos de supertécnicas</span><i></i></button>' +
     '<button class="btn ghost wide" data-a="help">Cómo se juega</button>' +
+    (G.run ? '<button class="btn ghost wide" data-a="relics">Objetos</button>' : '') +
     (G.run ? '<button class="btn ghost wide" data-a="menu">Menú principal</button><button class="btn danger wide" data-a="abandon">Abandonar carrera</button>' : '') +
   '</div>';
 }
@@ -556,6 +621,7 @@ function modalHelp() {
     helpRow(ICON.rest, 'Elementos', 'Fuego gana a Bosque, Bosque a Viento, Viento a Montaña y Montaña a Fuego. Con ventaja el tiro vale x1.5 y con desventaja x0.75.') +
     helpRow(ICON.team, 'Crecer', 'Los rivales se hacen más fuertes en cada casilla del mapa. Tú creces con cartas nuevas, mejoras, fichajes y +1 de aguante para tu portero por cada victoria.') +
     helpRow(ICON.up, 'Efectos', 'Las cartas que ganas traen efectos: Concentración (todos tus tiros suman más), Desorientado (tus tiros x1.5), Próximo tiro, Rival cansado y más.') +
+    helpRow(ICON.chest, 'Objetos', 'Dan ventajas para toda la carrera. Salen de cofres, élites, la tienda, algunos eventos y los jefes, que te dejan elegir un objeto de campeón.') +
     helpRow(ICON.heart, 'Moral', 'Es tu vida en toda la carrera. Cada gol encajado te quita Moral, y perder un partido te quita 8, o 10 contra una élite. Si llega a 0 o pierdes contra un jefe, quedas eliminado.') +
   '</div>';
 }
@@ -611,6 +677,13 @@ function act(a, ds) {
     case 'rasgo': G.modal = { k: 'rasgo' }; renderModal(); break;
     // recompensas
     case 'take': takeCard(ds.id); break;
+    case 'boon': takeBoon(ds.id); break;
+    case 'bossrelic': takeBossRelic(ds.id); break;
+    case 'buyrelic': buyRelic(+ds.i); break;
+    case 'openchest': openChest(); break;
+    case 'chestsign': if (r.chest && r.chest.sign && !r.chest.signed) { r.chest.signed = true; sign(r.chest.sign); saveRun(); render(); } break;
+    case 'relic': G.modal = { k: 'relic', id: ds.id }; renderModal(); break;
+    case 'relics': G.modal = { k: 'relics' }; renderModal(); break;
     case 'skipcards': skipCards(); break;
     case 'sign':
       sign(ds.p);
@@ -625,7 +698,9 @@ function act(a, ds) {
       else if (G.modal.mode === 'remove') {
         removeCard(ds.u); sfx('tap');
         if (G.modal.from === 'shop') { r.coins -= r.removeCost; r.removeCost += 25; r.shop.removed = true; }
-        G.modal = null; saveRun(); render();
+        var fromB = G.modal.from === 'boon';
+        G.modal = null;
+        if (fromB) goScreen('map'); else { saveRun(); render(); }
       }
       break;
     case 'upok':
@@ -637,7 +712,7 @@ function act(a, ds) {
     case 'buy': buyCard(+ds.i); break;
     case 'buysign': buySign(); break;
     case 'shopremove': if (r.coins >= r.removeCost && !r.shop.removed) { G.modal = { k: 'deck', mode: 'remove', from: 'shop' }; renderModal(); } break;
-    case 'leave': r.shop = null; r.event = null; goScreen('map'); break;
+    case 'leave': r.shop = null; r.event = null; r.chest = null; goScreen('map'); break;
     case 'evo': eventChoice(+ds.i); break;
   }
 }
@@ -722,7 +797,7 @@ async function runFx(f) {
       sfx('whoosh'); await sleep(1500); d.remove(); break;
     }
     case 'toast': {
-      var t = fxLayer('<div class="toast">' + esc(f.t) + '</div>'); await sleep(1100); t.remove(); break;
+      var t = fxLayer('<div class="toast ' + (f.c || '') + '">' + esc(f.t) + '</div>'); await sleep(f.c ? 1600 : 1100); t.remove(); break;
     }
     case 'tech': case 'rtech': await techFx(f, f.k === 'rtech'); break;
     case 'steal': {
@@ -735,7 +810,7 @@ async function runFx(f) {
     }
     case 'shot': {
       sfx('kick');
-      await ballFly(true);
+      await fieldFly('[data-p="' + f.who + '"]', '[data-rp="' + B_().T.gk + '"]', true);
       var k = document.getElementById('rvK');
       if (k) { k.classList.remove('hit'); void k.offsetWidth; k.classList.add('hit'); }
       if (f.absorbed) floatText('rv', 'Muro ' + f.absorbed, 'white');
@@ -744,7 +819,7 @@ async function runFx(f) {
     }
     case 'rshot': {
       sfx('kick');
-      await ballFly(false);
+      await fieldFly('[data-rp="' + f.who + '"]', '[data-p="' + MY_KEEPER + '"]', false);
       var mk = document.getElementById('meK');
       if (mk) { mk.classList.remove('hit'); void mk.offsetWidth; mk.classList.add('hit'); }
       if (f.blocked) floatText('me', 'Parada ' + f.blocked, 'blue');
@@ -772,6 +847,25 @@ function floatText(side, t, c) {
   setTimeout(function () { d.remove(); }, 1300);
 }
 
+async function fieldFly(fromSel, toSel, mine) {
+  var field = document.querySelector('.field');
+  if (!field || !field.offsetHeight) { await ballFly(mine); return; }
+  var a = field.querySelector(fromSel), b = field.querySelector(toSel);
+  var fb = field.getBoundingClientRect();
+  var ra = a ? a.getBoundingClientRect() : { left: fb.left + fb.width * (mine ? 0.35 : 0.65), top: fb.top + fb.height / 2, width: 0, height: 0 };
+  if (!b) { await ballFly(mine); return; }
+  var rb = b.getBoundingClientRect();
+  if (a) { a.classList.add('act'); setTimeout(function () { a.classList.remove('act'); }, 700); }
+  var d = document.createElement('div');
+  d.className = 'flyball'; d.innerHTML = ICON.ball;
+  var x0 = ra.left + ra.width / 2, y0 = ra.top + ra.height / 2;
+  d.style.left = x0 + 'px'; d.style.top = y0 + 'px';
+  $fx.appendChild(d);
+  void d.offsetWidth;
+  d.style.transform = 'translate(' + (rb.left + rb.width / 2 - x0) + 'px,' + (rb.top + rb.height / 2 - y0) + 'px) rotate(720deg)';
+  await sleep(380);
+  d.remove();
+}
 async function ballFly(up) {
   var a = document.getElementById(up ? 'meK' : 'rvK'), b = document.getElementById(up ? 'rvK' : 'meK');
   if (!a || !b) return;
