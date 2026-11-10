@@ -337,7 +337,7 @@ body[data-screen="battle"] { overflow: hidden; }
 .it-shot .big { color: #ff8a8a; }
 .it-adv { border-color: var(--orange); background: linear-gradient(90deg, rgba(255, 122, 26, .2), rgba(255, 122, 26, .04)); }
 .it-def { border-color: #8ea4d8; background: linear-gradient(90deg, rgba(142, 164, 216, .18), rgba(142, 164, 216, .03)); }
-.it-def .big { display: inline-flex; margin-right: 10px; }
+
 .it-off { border-color: rgba(255, 255, 255, .15); background: rgba(255, 255, 255, .04); }
 .it-off .big { color: var(--cyan); }
 
@@ -358,8 +358,7 @@ body[data-screen="battle"] { overflow: hidden; }
 .ballpos { z-index: 2;  position: absolute; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); transition: left .6s cubic-bezier(.3, 1.3, .5, 1); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .6)); }
 .ballpos svg { width: 100%; height: 100%; animation: spin 2s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.ball-me .ballpos { left: 58%; }
-.ball-rv .ballpos { left: 42%; }
+.ballpos { left: 52%; }
 .poss { position: absolute; z-index: 3; top: 3px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .1em; padding: 1px 6px; border-radius: 6px; background: rgba(0, 0, 0, .45); }
 .ball-me .poss { right: 8%; color: var(--yellow); }
 .ball-rv .poss { left: 8%; color: #ff9a9a; }
@@ -400,7 +399,15 @@ body[data-screen="battle"] { overflow: hidden; }
 .ctrl .endt { padding: 10px 14px; font-size: 14px; white-space: nowrap; }
 @media (max-width: 430px) { .ctrl .cambio span { display: none; } .ctrl .cambio { padding: 8px 9px; } .pile { padding: 6px 5px; } }
 @media (max-width: 380px) { .ctrl { gap: 4px; } .orbs i { width: 11px; height: 11px; } .tp { padding: 4px 7px 4px 5px; } .ctrl .endt { padding: 9px 10px; font-size: 13px; } }
-.ball-rv .endt { background: linear-gradient(180deg, #ff8a8a, #ff4b5c); border-color: #ffc0c6; color: #fff; text-shadow: none; box-shadow: 0 4px 0 #8a1020; }
+.danger .endt { background: linear-gradient(180deg, #ff8a8a, #ff4b5c); border-color: #ffc0c6; color: #fff; text-shadow: none; box-shadow: 0 4px 0 #8a1020; }
+.ctrl .endt { margin-left: auto; }
+.bigs { display: flex; flex-wrap: wrap; gap: 0 12px; }
+.risk { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 6px; font-weight: 900; font-size: 11px; }
+.risk.bad { background: rgba(255, 75, 92, .25); color: #ff9aa4; }
+.risk.ok { background: rgba(61, 220, 132, .2); color: #8dffbf; }
+.danger .me-k { border-color: rgba(255, 75, 92, .6); }
+.chip.gold { background: rgba(255, 207, 31, .22); color: var(--yellow); }
+.pitch .chips { justify-content: center; }
 
 .hand { flex: none; display: flex; justify-content: center; align-items: flex-end; height: calc(var(--cw) * 1.4 + 18px); padding: 10px 4px max(8px, env(safe-area-inset-bottom)); position: relative; }
 .card.in-hand { transform: translateY(var(--ty, 0)) rotate(var(--rot, 0deg)); transform-origin: 50% 120%; cursor: pointer; transition: transform .2s ease-out, filter .2s, margin .2s; }

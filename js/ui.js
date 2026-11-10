@@ -1,7 +1,7 @@
 'use strict';
 /* Inazuma Cartas: pantallas, cartas, efectos y sonido. */
 
-G.ui = { sel: null, cambioMode: false, gFilter: 'todas', actIntro: false, suppressClick: false };
+G.ui = { sel: null, gFilter: 'todas', actIntro: false, suppressClick: false };
 var FINE = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 var $app = document.getElementById('app');
 var $fx = document.getElementById('fx');
@@ -34,7 +34,7 @@ var NODE_INFO = {
   descanso: { n: 'Descanso', icon: ICON.rest, c: '#3ddc84' },
   jefe: { n: 'Jefe', icon: ICON.bolt, c: '#ffcf3a' }
 };
-var TYPE_ICON = { tiro: ICON.boot, jugada: ICON.ball, defensa: ICON.shield, portero: ICON.hand, tactica: ICON.bolt, estado: ICON.q };
+var TYPE_ICON = { tiro: ICON.boot, defensa: ICON.hand, tactica: ICON.bolt, estado: ICON.q };
 
 function avatar(pid, cls) {
   var p = PLAYERS[pid]; if (!p) return '';
@@ -50,29 +50,26 @@ function cardText(c, live) {
   if (d.t === 'tiro') {
     var pow = v.pow, cls = '';
     if (live && B_()) { var sp = shotPower(c); pow = sp.final; cls = sp.final > v.pow ? 'hi' : sp.final < v.pow ? 'lo' : ''; }
-    p.push('Tiro <b class="num ' + cls + '">' + pow + '</b>.');
-    if (v.k === 3) p.push('Cada Jugada suma 3.');
-    if (v.robo) p.push('+' + v.robo + ' si robaste el balón este turno.');
+    p.push('Tiro <b class="num ' + cls + '">' + pow + '</b>' + (v.hits > 1 ? ' x' + v.hits : '') + '.');
+    if (v.pierce) p.push('Ignora el muro.');
+    if (v.ps) p.push('+' + v.ps + ' por cada tiro que ya hayas hecho este turno.');
     if (v.axel) p.push('Combinada: +' + v.axel + ' si tienes a Axel Blaze.');
     if (v.jude) p.push('Combinada: +' + v.jude + ' si tienes a Jude Sharp.');
-    if (v.j3) p.push('+' + v.j3 + ' con 3 o más de Jugada.');
-    if (v.jc) p.push('+' + v.jc + ' por carta de Jugada jugada este turno.');
-    if (v.reb) p.push('Rebote: si no es gol, sigues con el balón.');
+    if (v.gdraw) p.push('Si es gol, roba ' + v.gdraw + '.');
   }
-  if (v.jug) p.push('+' + v.jug + ' Jugada.');
-  if (v.dbl) p.push('Duplica tu Jugada.');
-  if (v.ctl) p.push('+' + v.ctl + ' Control.');
-  if (v.cj) p.push('Si así robas el balón, +' + v.cj + ' Jugada.');
   if (v.par) p.push('+' + v.par + ' Parada.');
   if (v.heal) p.push('Tu portero recupera ' + v.heal + ' de aguante.');
   if (v.fat) p.push('El próximo tiro rival pierde ' + v.fat + '.');
+  if (v.vul) p.push('Desorienta ' + v.vul + (v.vul > 1 ? ' turnos.' : ' turno.'));
+  if (v.oca) p.push('Tu próximo tiro suma ' + v.oca + '.');
+  if (v.dbl) p.push('Tu próximo tiro se repite.');
   if (v.conc) p.push('+' + v.conc + ' Concentración.');
   if (v.draw) p.push('Roba ' + v.draw + (v.draw > 1 ? ' cartas.' : ' carta.'));
   if (v.tp) p.push('Ganas ' + v.tp + ' TP.');
   if (v.tpn) p.push('El próximo turno, +' + v.tpn + ' TP.');
   if (v.parT) p.push('Al empezar cada turno, +' + v.parT + ' Parada.');
-  if (v.unplay) p.push('No se puede jugar. Si la cambias, sale del partido.');
-  if (v.perm) p.push('<i>Permanente.</i>');
+  if (v.unplay) p.push('No se puede jugar. Si acaba el turno en tu mano, desaparece.');
+  if (v.perm) p.push('<i>Para todo el partido.</i>');
   if (v.agota) p.push('<i>Agota.</i>');
   return p.join(' ');
 }
@@ -81,7 +78,7 @@ function cardHTML(c, o) {
   o = o || {};
   if (typeof c === 'string') c = { id: c, up: false, u: '' };
   var d = CARDS[c.id], el = cardEl(c), tc = TYPE_INFO[d.t].c, ec = el ? ELEM_INFO[el].c : '#7d8799';
-  var cost = cardCost(c);
+  var cost = o.live && B_() ? cardCostB(c) : cardCost(c);
   var holo = d.r === 'R' || d.r === 'S' || d.r === 'F';
   var cls = 'card t-' + d.t + ' r-' + d.r + (c.up ? ' up' : '') + (holo ? ' holo' : '') + (o.cls ? ' ' + o.cls : '') + (o.tilt ? ' tilt' : '');
   var txt = cardText(c, o.live), plain = txt.replace(/<[^>]+>/g, '');
@@ -123,7 +120,7 @@ function render() {
 
 /* ---------- menú ---------- */
 function viewMenu() {
-  var saved = load(SAVE_KEY);
+  var saved = load(SAVE_KEY); if (saved && saved.v !== 2) saved = null;
   var st = load(STATS_KEY);
   var show = ['tornado_fuego', 'mano_celestial', 'espejismo'];
   return '<div class="menu">' +
@@ -132,7 +129,7 @@ function viewMenu() {
       '<div class="hero-copy">' +
         '<p class="kicker">Roguelike de cartas</p>' +
         '<h1 class="logo"><span>Inazuma</span><b>Cartas</b></h1>' +
-        '<p class="tag">Arma tu mazo de supertécnicas, roba balones, encadena jugadas y tumba a la Royal, al Zeus y al Genesis.</p>' +
+        '<p class="tag">Tira para marcar, para para no encajar y arma un mazo de supertécnicas para tumbar a la Royal, al Zeus y al Genesis.</p>' +
         '<div class="cta">' +
           (saved ? '<button class="btn primary big" data-a="continue">Continuar</button><button class="btn ghost" data-a="new">Nueva carrera</button>'
                  : '<button class="btn primary big" data-a="new">Jugar</button>') +
@@ -150,9 +147,9 @@ function viewMenu() {
       '</div>' +
     '</section>' +
     '<section class="pillars">' +
-      pillar(ICON.ball, 'El balón manda', 'Solo puedes tirar con el balón. Sin él, defiende o róbalo.') +
-      pillar(ICON.bolt, 'Encadena la jugada', 'Pases y regates cargan la Jugada y cada punto suma a tu tiro.') +
-      pillar(ICON.hand, 'Tumba al portero', 'Cada tiro desgasta su aguante. Cuando cae, es gol.') +
+      pillar(ICON.boot, 'Tira', 'Cada tiro desgasta al portero rival. Cuando cae, es gol.') +
+      pillar(ICON.hand, 'Para', 'Ves lo que va a tirar el rival. Frénalo con Parada.') +
+      pillar(ICON.bolt, 'Supertécnicas', 'Gana cartas con efectos y mira el vídeo de cada técnica.') +
       pillar(ICON.team, 'Ficha estrellas', 'Cada fichaje trae su pasiva y su supertécnica.') +
     '</section>' +
     '<p class="foot dim small">Fan game no oficial de Inazuma Eleven. Versión ' + APP_VERSION + '.</p>' +
@@ -242,45 +239,39 @@ function scrollMap() {
 
 /* ---------- partido ---------- */
 function intentHTML(B) {
-  var I = B.intent || {}, T = B.T, h = '', who = I.who ? avatar(I.who, 'sm') : '';
-  if (I.k === 'tiro') {
+  var I = B.intent || {}, who = I.who ? avatar(I.who, 'sm') : '';
+  var parts = [], sub = [], cls = 'it-def', title = I.tech || '';
+  if (I.pow) {
     var fin = rivalShotValue(I.pow, I.el), m = elemMult(I.el, PLAYERS[MY_KEEPER].el);
-    h = '<div class="it it-shot">' + who + '<div><small>' + esc(I.tech) + '</small>' +
-      '<b class="big">' + ICON.boot + 'Tiro ' + fin + elemIcon(I.el) + (m > 1 ? '<em class="hi">x1.5</em>' : m < 1 ? '<em class="lo">x0.75</em>' : '') + '</b>' +
-      '<span>Róbalo con <strong>' + effPos(I) + '</strong> de Control</span></div></div>';
-  } else if (I.k === 'avance') {
-    h = '<div class="it it-adv">' + who + '<div><small>' + esc(I.tech || 'Avance') + '</small><b class="big">' + ICON.up + 'Avance +' + I.val + '</b>' +
-      '<span>Róbalo con <strong>' + effPos(I) + '</strong> de Control</span></div></div>';
-  } else if (I.k === 'presion' || I.k === 'mixto' || I.k === 'muro') {
-    var parts = [];
-    if (I.pres) parts.push('<b class="big">' + ICON.team + 'Presión ' + I.pres + '</b>');
-    if (I.muro) parts.push('<b class="big">' + ICON.shield + 'Muro ' + I.muro + '</b>');
-    var sub = [];
-    if (I.pres) sub.push('Aguanta con <strong>' + I.pres + '</strong> de Control o tira');
-    if (I.contra) sub.push('Si te roban, contraataque de ' + rivalShotValue(I.contra, PLAYERS[T.st].el));
-    if (I.tpDown) sub.push('Tu próximo turno tendrá 1 TP menos');
-    if (I.cans) sub.push('Mete 1 Cansancio');
-    h = '<div class="it it-def">' + who + '<div>' + (I.tech ? '<small>' + esc(I.tech) + '</small>' : '<small>Defienden</small>') + parts.join('') + '<span>' + sub.join('. ') + '</span></div></div>';
-  } else if (I.k === 'robado') {
-    h = '<div class="it it-off"><div><small>¡Balón tuyo!</small><b class="big">Contraataca</b><span>Su ataque se ha cortado</span></div></div>';
-  } else if (I.k === 'saque') {
-    h = '<div class="it it-off"><div><small>Saque de portería</small><b class="big">Se reorganizan</b><span>Atacarán el próximo turno</span></div></div>';
+    parts.push('<b class="big">' + ICON.boot + 'Tiro ' + fin + ((I.hits || 1) > 1 ? ' x' + I.hits : '') + elemIcon(I.el) + (m > 1 ? '<em class="hi">x1.5</em>' : m < 1 ? '<em class="lo">x0.75</em>' : '') + '</b>');
+    sub.push('Frénalo con Parada');
+    cls = 'it-shot'; title = title || 'Tiro';
   }
-  return h;
-}
-
-function ctlMeter(B) {
-  var I = B.intent || {}, need = null, label = 'Control';
-  if (B.ball === 'rv' && I.pos != null) { need = effPos(I); label = 'Control para robar'; }
-  else if (B.ball === 'yo' && I.pres) { need = I.pres; label = 'Control para aguantar'; }
-  var pct = need ? Math.min(100, Math.round(B.ctl / need * 100)) : 0;
-  var ok = need && B.ctl >= need;
-  return '<div class="ctl' + (ok ? ' ok' : '') + '"><small>' + label + '</small><div class="bar"><span style="width:' + pct + '%"></span></div><b>' + B.ctl + (need ? '/' + need : '') + '</b></div>';
+  if (I.muro) {
+    parts.push('<b class="big">' + ICON.shield + 'Muro ' + I.muro + '</b>');
+    sub.push('Frena tus tiros este turno');
+    if (!I.pow) title = title || 'Defienden';
+  }
+  if (I.k === 'avance') {
+    parts.push('<b class="big">' + ICON.up + 'Avance +' + I.val + '</b>');
+    sub.push('Su próximo tiro suma ' + I.val);
+    cls = 'it-adv'; title = title || 'Se preparan';
+  }
+  if (I.k === 'presion') {
+    parts.push('<b class="big">' + ICON.team + 'Presión</b>');
+    if (I.tpDown) sub.push('Tu próximo turno tendrá ' + I.tpDown + ' TP menos');
+    if (I.cans) sub.push('Mete ' + I.cans + ' Cansancio en tu mazo');
+    cls = 'it-adv'; title = title || 'Te agobian';
+  }
+  return '<div class="it ' + cls + '">' + who + '<div><small>' + esc(title) + '</small><div class="bigs">' + parts.join('') + '</div><span>' + sub.join('. ') + '</span></div></div>';
 }
 
 function statusChips(B) {
   var c = [];
+  if (B.oca) c.push('<span class="chip blue" title="Se suma a tu próximo tiro">Próximo tiro +' + B.oca + '</span>');
+  if (B.dbl) c.push('<span class="chip blue" title="Tu próximo tiro se repite">Pared</span>');
   if (B.conc) c.push('<span class="chip orange" title="Suma a todos tus tiros">Concentración ' + B.conc + '</span>');
+  if (B.rvul) c.push('<span class="chip gold" title="Tus tiros hacen x1.5">Desorientado ' + B.rvul + '</span>');
   if (B.parT) c.push('<span class="chip yellow" title="Parada al empezar cada turno">Neumáticos ' + B.parT + '</span>');
   if (B.tpNext) c.push('<span class="chip ' + (B.tpNext > 0 ? 'blue' : 'red') + '">Próximo turno ' + (B.tpNext > 0 ? '+' : '') + B.tpNext + ' TP</span>');
   if (B.rfat) c.push('<span class="chip green" title="Resta al próximo tiro rival">Rival cansado ' + B.rfat + '</span>');
@@ -292,13 +283,16 @@ function statusChips(B) {
 function viewBattle() {
   var r = G.run, B = r.battle; if (!B) return '';
   var T = B.T;
-  var minute = B.extra ? '90+' : minuteOf(B.turn) + "'";
+  var minute = B.extra ? '90+' : minuteOf(B.turn) + '\'';
   var half = B.extra ? 'Gol de oro' : B.turn <= 4 ? '1ª parte' : '2ª parte';
   var rPct = Math.max(0, Math.round(B.rres / B.rmax * 100)), kPct = Math.max(0, Math.round(B.kres / B.kmax * 100));
   var moralPct = Math.round(r.moral / r.moralMax * 100);
   var orbs = ''; for (var i = 0; i < Math.max(3, B.tp); i++) orbs += '<i class="' + (i < B.tp ? 'on' : '') + '"></i>';
   var kind = B.kind === 'boss' ? '<span class="tagk boss">Jefe</span>' : B.kind === 'elite' ? '<span class="tagk elite">Élite</span>' : '';
-  return '<div class="battle' + (B.ball === 'yo' ? ' ball-me' : ' ball-rv') + (G.ui.cambioMode ? ' cambio-on' : '') + '">' +
+  var inc = incoming(), through = Math.max(0, inc - B.par);
+  var risk = inc ? (through ? '<span class="risk bad">Te entran ' + through + (through >= B.kres ? ' · Gol' : '') + '</span>' : '<span class="risk ok">Tiro parado</span>') : '';
+  var chips = statusChips(B);
+  return '<div class="battle' + (through > 0 ? ' danger' : '') + '">' +
     '<header class="sb">' +
       '<div class="sb-moral" title="Moral"><i>' + ICON.heart + '</i><div class="bar"><span style="width:' + moralPct + '%"></span></div><b>' + r.moral + '</b></div>' +
       '<div class="sb-score">' + crestImg('raimon.webp') + '<b class="g">' + B.gYo + '</b><div class="sb-min"><b>' + minute + '</b><small>' + half + '</small></div><b class="g">' + B.gRv + '</b>' + crestImg(T.esc) + '</div>' +
@@ -314,33 +308,26 @@ function viewBattle() {
       '<div class="intent">' + intentHTML(B) + '</div>' +
     '</section>' +
     '<section class="pitch">' +
-      '<div class="field"><div class="half"></div>' + fieldPlayers(B) + '<div class="ballpos">' + ICON.ball + '</div>' +
-        '<span class="poss">' + (B.ball === 'yo' ? 'Tu balón' : 'Balón rival') + '</span></div>' +
-      '<div class="pitch-stats">' +
-        '<div class="jug' + (B.jug ? ' on' : '') + '" title="Cada punto suma a tu próximo tiro"><small>Jugada</small><b>' + B.jug + '</b></div>' +
-        ctlMeter(B) +
-      '</div>' +
+      '<div class="field"><div class="half"></div>' + fieldPlayers(B) + '<div class="ballpos">' + ICON.ball + '</div></div>' +
+      (chips ? '<div class="chips">' + chips + '</div>' : '') +
     '</section>' +
     '<section class="me">' +
       '<div class="keeper me-k" id="meK">' + avatar(MY_KEEPER, 'md') +
-        '<div class="k-info"><small>Raimon</small><b>' + PLAYERS[MY_KEEPER].n + elemIcon(PLAYERS[MY_KEEPER].el) + '</b>' +
+        '<div class="k-info"><small>Raimon ' + risk + '</small><b>' + PLAYERS[MY_KEEPER].n + elemIcon(PLAYERS[MY_KEEPER].el) + '</b>' +
         '<div class="kbar me"><span style="width:' + kPct + '%"></span><em>' + B.kres + '/' + B.kmax + '</em></div>' +
         (B.par ? '<span class="shield-chip me">' + ICON.shield + B.par + '</span>' : '') + '</div>' +
       '</div>' +
-      '<div class="chips">' + statusChips(B) + '</div>' +
     '</section>' +
     '<section class="ctrl">' +
       '<div class="tp" title="Puntos de técnica"><div class="orbs">' + orbs + '</div><b>' + B.tp + '</b><small>TP</small></div>' +
       '<button class="pile" data-a="pile" data-p="draw" title="Mazo">' + ICON.deck + '<b>' + B.draw.length + '</b></button>' +
       '<button class="pile" data-a="pile" data-p="disc" title="Descartes">' + ICON.deck + '<b>' + B.disc.length + '</b></button>' +
-      '<button class="btn sm cambio' + (G.ui.cambioMode ? ' on' : '') + '" data-a="cambio"' + (B.cambio ? ' disabled' : '') + ' title="Cambio">' + ICON.swap + '<span>Cambio</span></button>' +
       '<button class="btn primary endt" data-a="end">Fin de turno</button>' +
     '</section>' +
     '<section class="hand" id="hand">' + B.hand.map(function (c, i) {
       var why = playReason(c);
       return cardHTML(c, { live: true, cls: 'in-hand' + (why ? ' dis' : '') + (G.ui.sel === c.u ? ' sel' : '') + (c.fresh ? ' drawn' : ''), style: ';--i:' + i });
     }).join('') + '</section>' +
-    (G.ui.cambioMode ? '<div class="cambio-hint">Toca la carta que quieres cambiar</div>' : '') +
     previewHTML(B) +
   '</div>';
 }
@@ -359,19 +346,18 @@ function fieldPlayers(B) {
   });
   var T = B.T;
   h += '<span class="fp rv" style="left:94%;top:50%">' + avatar(T.gk, 'xs') + '</span>';
-  h += '<span class="fp rv" style="left:' + (B.ball === 'rv' ? 38 : 64) + '%;top:' + (B.ball === 'rv' ? 40 : 60) + '%">' + avatar(T.st, 'xs') + '</span>';
+  h += '<span class="fp rv" style="left:64%;top:58%">' + avatar(T.st, 'xs') + '</span>';
   return h;
 }
 
 function previewHTML(B) {
-  if (FINE || !G.ui.sel || G.ui.cambioMode) return '';
+  if (FINE || !G.ui.sel) return '';
   var c = null; B.hand.forEach(function (x) { if (x.u === G.ui.sel) c = x; });
   if (!c) return '';
   var why = playReason(c);
   return '<div class="preview" data-a="unsel"><div class="pv-box" data-stop="1">' + cardHTML(c, { live: true, cls: 'big' }) +
     '<div class="pv-btns">' +
       (why ? '<p class="why">' + why + '</p>' : '<button class="btn primary" data-a="play" data-u="' + c.u + '">Jugar</button>') +
-      (!B.cambio ? '<button class="btn ghost" data-a="swap" data-u="' + c.u + '">Cambiar</button>' : '') +
     '</div></div></div>';
 }
 
@@ -484,7 +470,7 @@ function viewGallery() {
   if (f !== 'todas') ids = ids.filter(function (id) { return CARDS[id].t === f; });
   var up = !!G.ui.gUp;
   return '<div class="screen gallery"><header class="top"><button class="btn ghost sm" data-a="menu">Volver</button><h2>Cartas</h2><button class="btn sm' + (up ? ' on' : '') + '" data-a="gup">' + (up ? 'Mejoradas' : 'Normales') + '</button></header>' +
-    '<div class="filters">' + ['todas', 'tiro', 'jugada', 'defensa', 'portero', 'tactica'].map(function (t) {
+    '<div class="filters">' + ['todas', 'tiro', 'defensa', 'tactica'].map(function (t) {
       return '<button class="fchip' + (f === t ? ' on' : '') + '" data-a="gf" data-f="' + t + '" style="--tc:' + (TYPE_INFO[t] ? TYPE_INFO[t].c : '#ffcf3a') + '">' + (TYPE_INFO[t] ? TYPE_INFO[t].n : 'Todas') + '</button>';
     }).join('') + '</div>' +
     '<div class="grid">' + ids.map(function (id) { return '<div class="g-item">' + cardHTML({ id: id, up: up, u: '' }, { tilt: true }) + '<small>' + RARITY_INFO[CARDS[id].r] + '</small></div>'; }).join('') + '</div>' +
@@ -512,7 +498,7 @@ function renderModal() {
   $modal.innerHTML = '<div class="m-back" data-a="' + (closable ? 'close' : '') + '"></div><div class="m-box">' + (closable ? '<button class="m-x" data-a="close" aria-label="Cerrar">×</button>' : '') + h + '</div>';
 }
 function sortDeck(arr) {
-  var order = { tiro: 0, jugada: 1, defensa: 2, portero: 3, tactica: 4, estado: 5 };
+  var order = { tiro: 0, defensa: 1, tactica: 2, estado: 3 };
   return arr.slice().sort(function (a, b) { return order[CARDS[a.id].t] - order[CARDS[b.id].t] || CARDS[a.id].n.localeCompare(CARDS[b.id].n); });
 }
 function modalDeck(m) {
@@ -563,14 +549,12 @@ function modalConfirmUp(m) {
 function modalHelp() {
   return '<h2>Cómo se juega</h2><div class="help">' +
     helpRow(ICON.ball, 'El partido', 'Dura 8 turnos, los 90 minutos. Gana quien lleve más goles al final. Si hay empate, gol de oro: el primero que marque gana.') +
-    helpRow(ICON.bolt, 'Tu turno', 'Tienes 3 TP y robas 5 cartas. Cada carta cuesta TP. Al pulsar Fin de turno, el rival hace lo que anuncia su intención.') +
-    helpRow(ICON.boot, 'Tirar', 'Solo con el balón. Cada tiro resta aguante al portero rival. Si llega a 0, es gol. Después del tiro el balón pasa al rival, salvo que la carta tenga Rebote.') +
-    helpRow(ICON.ball, 'Jugada', 'Los pases y regates suman Jugada. Cada punto añade 2 a tu próximo tiro. Si no tiras, la Jugada sigue abierta al turno siguiente mientras conserves el balón.') +
-    helpRow(ICON.team, 'Control', 'Si el rival tiene el balón, junta el Control que pide su intención y se lo robas: su ataque se corta y puedes contraatacar en el mismo turno. Si lo tienes tú y te presionan, necesitas ese Control o te lo quitan al final del turno.') +
-    helpRow(ICON.hand, 'Parada', 'Frena los tiros rivales antes de tocar el aguante de tu portero. Se pierde al empezar tu turno.') +
-    helpRow(ICON.shield, 'Muro', 'El portero rival lo levanta en su turno de defensa y frena tus tiros antes de su aguante.') +
+    helpRow(ICON.bolt, 'Tu turno', 'Tienes 3 TP y robas 5 cartas. Cada carta cuesta TP. Al pulsar Fin de turno, el rival hace lo que anuncia arriba.') +
+    helpRow(ICON.boot, 'Tirar', 'Cada tiro resta aguante al portero rival. Si llega a 0, es gol y vuelve a empezar lleno. Si el rival levanta Muro, tus tiros chocan primero con él.') +
+    helpRow(ICON.hand, 'Parar', 'La Parada frena el tiro que anuncia el rival antes de tocar el aguante de tu portero. Se pierde al empezar tu siguiente turno. Si tu portero llega a 0, te marcan.') +
+    helpRow(ICON.shield, 'El rival', 'Siempre ves su intención: Tiro, Muro, Avance (su próximo tiro suma más) o Presión (te quita TP o te mete Cansancio).') +
     helpRow(ICON.rest, 'Elementos', 'Fuego gana a Bosque, Bosque a Viento, Viento a Montaña y Montaña a Fuego. Con ventaja el tiro vale x1.5 y con desventaja x0.75.') +
-    helpRow(ICON.swap, 'Cambio', 'Una vez por turno, sin coste, cambias una carta de la mano por otra del mazo. El Cansancio cambiado sale del partido.') +
+    helpRow(ICON.up, 'Efectos', 'Las cartas que ganas traen efectos: Concentración (todos tus tiros suman más), Desorientado (tus tiros x1.5), Próximo tiro, Rival cansado y más.') +
     helpRow(ICON.heart, 'Moral', 'Es tu vida en toda la carrera. Cada gol encajado te quita Moral, y perder un partido te quita 12, o 15 contra una élite. Si llega a 0 o pierdes contra un jefe, quedas eliminado.') +
   '</div>';
 }
@@ -592,7 +576,6 @@ document.addEventListener('click', function (ev) {
 
 function onHandCard(uid) {
   var B = B_(); if (!B || G.busy) return;
-  if (G.ui.cambioMode) { useCambio(uid); return; }
   if (FINE || G.ui.sel === uid) { playCard(uid); return; }
   G.ui.sel = uid; sfx('tap'); render();
 }
@@ -622,9 +605,7 @@ function act(a, ds) {
     // partido
     case 'end': endTurn(); break;
     case 'play': playCard(ds.u); break;
-    case 'swap': useCambio(ds.u); break;
     case 'unsel': G.ui.sel = null; render(); break;
-    case 'cambio': if (!B_().cambio) { G.ui.cambioMode = !G.ui.cambioMode; G.ui.sel = null; render(); } break;
     case 'pile': G.modal = { k: 'pile', p: ds.p }; renderModal(); break;
     case 'rasgo': G.modal = { k: 'rasgo' }; renderModal(); break;
     // recompensas
@@ -663,7 +644,7 @@ function act(a, ds) {
 /* Arrastrar una carta hacia arriba para jugarla (móvil y escritorio) */
 var drag = null;
 document.addEventListener('pointerdown', function (e) {
-  var c = e.target.closest('.hand .card'); if (!c || G.busy || G.ui.cambioMode) return;
+  var c = e.target.closest('.hand .card'); if (!c || G.busy) return;
   drag = { el: c, u: c.dataset.u, x: e.clientX, y: e.clientY, moved: false };
 });
 document.addEventListener('pointermove', function (e) {

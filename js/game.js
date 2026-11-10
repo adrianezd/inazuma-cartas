@@ -28,13 +28,13 @@ function has(pid) { return !!(G.run && G.run.team.indexOf(pid) >= 0); }
 function captain() { return G.run ? G.run.cap : null; }
 function newCard(id, up) { var r = G.run; r.uid = (r.uid || 1) + 1; return { u: 'k' + r.uid, id: id, up: !!up }; }
 function addCard(id, up) { var c = newCard(id, up); G.run.deck.push(c); return c; }
-function keeperMax() { return 16 + (has('r13') ? 6 : 0) + (has('r51') ? 10 : 0); }
+function keeperMax() { return 20 + (has('r13') ? 6 : 0) + (has('r51') ? 10 : 0); }
 var MY_KEEPER = 'r01';
 
 function newRun(capIdx) {
   var cap = CAPTAINS[capIdx];
   G.run = {
-    v: 1, cap: cap.id, team: BASE_TEAM.concat([cap.id]), deck: [], moral: 60, moralMax: 60, coins: 40,
+    v: 2, cap: cap.id, team: BASE_TEAM.concat([cap.id]), deck: [], moral: 60, moralMax: 60, coins: 40,
     act: 0, map: null, pos: null, uid: 1, removeCost: 60, lastTeams: [], battle: null, reward: null,
     shop: null, event: null, screen: 'map',
     stats: { wins: 0, goals: 0, against: 0, floors: 0, start: Date.now() }
@@ -120,25 +120,25 @@ function enterNode(k) {
   else if (n.type === 'descanso') goScreen('rest');
 }
 
-/* ---------- partido ---------- */
+/* ---------- partido ----------
+   Cada turno: 3 TP y 5 cartas. Los tiros restan aguante al portero rival
+   (primero se comen su muro); al llegar a 0 es gol. La Parada frena el tiro
+   que anuncia el rival. Quien lleve más goles al final de los 8 turnos gana. */
 function scaleTeam(id, act, kind) {
   var T = TEAMS[id], F = T.boss ? 1 : [1, 1.3, 1.6][act];
   var o = {}; for (var k in T) o[k] = T[k];
   var s = function (x) { return Math.round(x * F); };
-  var a = T.boss ? 0 : act;
   o.id = id; o.kind = kind;
-  o.res = Math.round(s(T.res) * (T.boss ? 1 : 0.85));
-  o.shot = T.shot.map(function (x) { return s(x) + (T.boss ? 0 : 2); });
-  o.pos = T.pos.map(function (x) { return x + a + 1; });
-  o.pres = T.pres.map(function (x) { return x + a; });
-  o.muro = T.muro.map(function (x) { return x + 2 * a; });
+  o.res = s(T.res);
+  o.shot = T.shot.map(function (x) { return Math.round(s(x) * (T.boss ? 1.25 : 1.4)); });
+  o.spow = T.spow ? Math.round(T.spow * 1.2) : 0;
+  o.muro = T.muro.map(s);
   if (kind === 'elite') {
     o.res = Math.round(o.res * 1.3);
     o.shot = o.shot.map(function (x) { return x + 2; });
-    o.pos = o.pos.map(function (x) { return x + 1; });
-    o.pres = o.pres.map(function (x) { return x + 1; });
+    o.muro = o.muro.map(function (x) { return x + 2; });
   }
-  o.golpe = (kind === 'boss' ? 10 : kind === 'elite' ? 8 : 6) + act;
+  o.golpe = (kind === 'boss' ? 8 : kind === 'elite' ? 6 : 5) + act;
   return o;
 }
 
@@ -157,12 +157,13 @@ function startBattle(kind) {
   var T = scaleTeam(tid, r.act, kind);
   var km = keeperMax();
   var B = {
-    tid: tid, kind: kind, T: T, turn: 0, maxT: 8, extra: false, gYo: 0, gRv: 0, ball: 'yo',
-    jug: 0, ctl: 0, par: 0, tp: 0, kmax: km, kres: km, rmax: T.res, rres: T.res, rmuro: 0,
-    conc: (has('r20') ? 2 : 0) + (has('r14') ? 1 : 0), rfat: 0, rimp: 0, rconc: 0,
+    tid: tid, kind: kind, T: T, turn: 0, maxT: 8, extra: false, gYo: 0, gRv: 0,
+    par: 0, tp: 0, kmax: km, kres: km, rmax: T.res, rres: T.res, rmuro: 0,
+    conc: (has('r20') ? 2 : 0) + (has('r14') ? 1 : 0), oca: 0, dbl: 0, rvul: has('r07') ? 2 : 0,
+    rfat: 0, rimp: 0, rconc: 0, parT: 0,
     tpNext: has('r14') ? 1 : 0, drawNext: has('r15') ? 2 : 0,
     draw: shuffle(r.deck.map(function (c) { return { u: c.u, id: c.id, up: c.up }; })), hand: [], disc: [], exh: [],
-    parT: 0, intent: null, stole: false, shots: 0, jugCards: 0, cambio: false, erik: false, atk: 0,
+    intent: null, shots: 0, played: 0, erik: false, rt: 0, calm: 0,
     seen: {}, over: null, log: []
   };
   r.battle = B;
@@ -208,105 +209,110 @@ function startTurn(first) {
     pushFx({ k: 'banner', t: 'Segunda parte', s: '', c: 'blue' });
   }
   B.tp = Math.max(0, 3 + B.tpNext); B.tpNext = 0;
-  B.par = B.parT;
-  B.ctl = (B.ball === 'rv' && captain() === 'r08') ? 3 : 0;
-  B.stole = false; B.shots = 0; B.jugCards = 0; B.cambio = false; B.rmuro = 0;
+  B.par = B.parT + (captain() === 'r08' ? 3 : 0);
+  B.shots = 0; B.played = 0; B.rmuro = 0;
   if (T.rasgo === 'nectar' && B.turn > 1) B.rconc++;
   if (T.rasgo === 'kageyama' && B.turn === 5) {
     B.draw.push({ u: 'x' + Date.now() + 'a', id: 'cansancio' }, { u: 'x' + Date.now() + 'b', id: 'cansancio' });
     shuffle(B.draw);
     pushFx({ k: 'banner', t: 'Trampa de Kageyama', s: 'Entran 2 Cansancio en tu mazo.', c: 'red' });
   }
-  drawCards(5 + B.drawNext); B.drawNext = 0;
+  drawCards(5 + B.drawNext + (captain() === 'r04' ? 1 : 0)); B.drawNext = 0;
   B.intent = rollIntent();
   if (B.intent.muro) B.rmuro = B.intent.muro;
-  if (B.intent.st && B.intent.k !== 'tiro') pushFx({ k: 'rtech', who: B.intent.who || T.gk, tech: B.intent.tech, vid: B.intent.vid });
-  checkSteal(null);
-  if (first) pushFx({ k: 'banner', t: 'Saque inicial', s: 'Empiezas con el balón.', c: 'blue' });
+  if (B.intent.st && !B.intent.pow) pushFx({ k: 'rtech', who: B.intent.who || T.gk, tech: B.intent.tech, vid: G.opts.video && !B.seen['r_' + B.intent.tech] ? B.intent.vid : null });
+  if (B.intent.st && !B.intent.pow) B.seen['r_' + B.intent.tech] = 1;
+  if (first) pushFx({ k: 'banner', t: '¡Empieza el partido!', s: 'Tira para marcar y para con Parada.', c: 'blue' });
 }
-
-function effPos(I) { return I && I.pos != null ? Math.max(1, I.pos - (has('r16') ? 2 : 0)) : null; }
 
 function rivalShotValue(pow, el) {
   var B = B_();
-  return Math.max(0, Math.round((pow + B.rconc - B.rfat) * elemMult(el, PLAYERS[MY_KEEPER].el)));
+  var v = pow + B.rconc - B.rfat - (has('r16') ? 1 : 0);
+  return Math.max(0, Math.round(v * elemMult(el, PLAYERS[MY_KEEPER].el)));
+}
+function incoming() {
+  var B = B_(), I = B.intent || {};
+  if (!I.pow) return 0;
+  var one = rivalShotValue(I.pow, I.el);
+  // el cansancio solo frena el primer tiro
+  var rest = (I.hits || 1) > 1 ? Math.max(0, Math.round((I.pow + B.rconc - (has('r16') ? 1 : 0)) * elemMult(I.el, PLAYERS[MY_KEEPER].el))) * ((I.hits || 1) - 1) : 0;
+  return one + rest;
+}
+
+function shotIntent(pow, special) {
+  var B = B_(), T = B.T;
+  return { k: 'tiro', pow: pow + B.rimp, el: PLAYERS[T.st].el, who: T.st, tech: special ? (T.stech || T.tech) : 'Tiro', st: special ? 1 : 0, vid: special ? T.vid : null, hits: 1 };
 }
 
 function rollIntent() {
-  var B = B_(), T = B.T, el = PLAYERS[T.st].el, rg = T.rasgo;
-  if (B.ball === 'rv') {
-    var n = B.atk;
-    var I;
-    if (T.boss) {
-      if (rg === 'genesis') {
-        if (B.rimp === 0 && n % 2 === 0) I = { k: 'avance', val: 8, pos: rr(T.pos) + 1, tech: 'Carga de Supernova', who: T.st };
-        else if (B.rimp > 0) I = { k: 'tiro', pow: T.spow + B.rimp, pos: rr(T.pos) + 1, el: el, who: T.st, tech: T.stech, st: 1, vid: T.vid };
-        else I = { k: 'tiro', pow: rr(T.shot), pos: rr(T.pos), el: el, who: T.st, tech: 'Tiro' };
-      } else if (n % 3 === 2) {
-        I = { k: 'tiro', pow: T.spow + B.rimp, pos: T.pos[1] + 2, el: el, who: T.st, tech: T.stech, st: 1, vid: T.vid };
-      } else if (B.rimp === 0 && Math.random() < 0.3) {
-        I = { k: 'avance', val: ri(4, 6), pos: rr(T.pos) - 1, who: T.st, tech: 'Avance' };
-      } else {
-        I = { k: 'tiro', pow: rr(T.shot) + B.rimp, pos: rr(T.pos), el: el, who: T.st, tech: 'Tiro' };
-      }
-    } else if (B.rimp === 0 && Math.random() < 0.33) {
-      I = { k: 'avance', val: ri(3, 5) + G.run.act + (rg === 'murdock' ? 3 : 0), pos: rr(T.pos) - 1, who: T.st, tech: 'Avance' };
-    } else {
-      var special = Math.random() < 0.4;
-      I = { k: 'tiro', pow: rr(T.shot) + B.rimp + (special ? 2 : 0), pos: rr(T.pos), el: el, who: T.st,
-            tech: special ? T.tech : 'Tiro', st: special ? 1 : 0, vid: special ? T.vid : null };
-    }
-    B.atk++;
+  var B = B_(), T = B.T, rg = T.rasgo;
+  var n = B.rt++;
+  var I;
+  // jefes
+  if (rg === 'genesis') {
+    if (n % 3 === 0) I = { k: 'avance', val: 10, tech: 'Carga de Supernova', st: 1, who: T.st };
+    else if (n % 3 === 1) I = shotIntent(T.spow, true);
+    else I = Math.random() < 0.5 ? { k: 'muro', muro: rr(T.muro), tech: T.muroTech, who: T.gk } : shotIntent(rr(T.shot), false);
     return I;
   }
-  // tienes tú el balón
-  var r = Math.random();
-  var contra = (rg === 'contra' || rg === 'alius' || rg === 'genesis') ? Math.max(4, rr(T.shot) - 3) : 0;
-  if (rg === 'nectar' && r < 0.3) return { k: 'presion', pres: rr(T.pres) - 1, tpDown: 1, tech: 'Hora Celestial', st: 1, who: T.st };
-  if (r < 0.45) return { k: 'presion', pres: rr(T.pres), contra: contra, cans: rg === 'maldicion' ? 1 : 0 };
-  if (r < 0.8) {
-    var mu = rr(T.muro);
-    if (T.muroTech) return { k: 'muro', muro: mu, tech: T.muroTech, st: 1, vid: T.muroVid, who: T.gk };
-    return { k: 'muro', muro: mu };
+  if (T.boss && n % 3 === 2) return shotIntent(T.spow, true);
+  if (rg === 'nectar' && Math.random() < 0.2) return { k: 'presion', tpDown: 1, tech: 'Hora Celestial', st: 1, who: T.st };
+
+  var w = { tiro: 45, tiromuro: 15, muro: 15, avance: B.rimp ? 0 : 12, presion: 13 };
+  if (rg === 'ninja' || rg === 'escaner') { w.muro += 15; w.tiromuro += 5; }
+  if (rg === 'salvaje' || rg === 'llamas') { w.tiro += 15; w.muro = 5; w.tiromuro = 5; }
+  if (rg === 'bolafalsa' || rg === 'hielo' || rg === 'maldicion') w.presion += 12;
+  if (rg === 'murdock' && !B.rimp) w.avance += 10;
+  // después de dos turnos sin tirar, tiran seguro
+  if (B.calm >= 2) { w = { tiro: 1 }; }
+  var tot = 0, k; for (k in w) tot += w[k];
+  var x = Math.random() * tot;
+  for (k in w) { x -= w[k]; if (x < 0) break; }
+  var special = Math.random() < 0.35;
+  if (k === 'tiro') {
+    I = shotIntent(rr(T.shot) + (special ? 2 : 0), special && !T.boss);
+    if (rg === 'alius' && Math.random() < 0.45) { I.pow = Math.round(I.pow * 0.6); I.hits = 2; }
+  } else if (k === 'tiromuro') {
+    I = shotIntent(Math.round(rr(T.shot) * 0.7), false);
+    I.k = 'tiromuro'; I.muro = Math.round(rr(T.muro) * 0.7);
+  } else if (k === 'muro') {
+    I = { k: 'muro', muro: rr(T.muro) };
+    if (T.muroTech) { I.tech = T.muroTech; I.st = 1; I.vid = T.muroVid; I.who = T.gk; }
+  } else if (k === 'avance') {
+    I = { k: 'avance', val: ri(3, 5) + G.run.act + (rg === 'murdock' ? 3 : 0), who: T.st };
+  } else {
+    I = { k: 'presion', tpDown: (rg === 'maldicion') ? 0 : 1, cans: (rg === 'maldicion' || rg === 'kageyama') ? 1 : 0, who: T.st };
+    if (!I.tpDown && !I.cans) I.tpDown = 1;
   }
-  return { k: 'mixto', pres: rr(T.pres) - 2, muro: Math.max(2, rr(T.muro) - 2), contra: contra, cans: rg === 'maldicion' ? 1 : 0 };
+  B.calm = I.pow ? 0 : B.calm + 1;
+  return I;
 }
 
-function shotPower(c) {
+function shotPower(c, extraShots) {
   var B = B_(), v = cardV(c), d = CARDS[c.id];
-  var base = (v.pow || 0) + B.jug * (v.k || 2) + B.conc;
-  if (captain() === 'r02' && B.shots === 0) base += 3;
-  if (v.robo && B.stole) base += v.robo;
+  var shotsBefore = B.shots + (extraShots || 0);
+  var base = (v.pow || 0) + B.conc + B.oca;
+  if (captain() === 'r02' && shotsBefore === 0) base += 3;
   if (v.axel && has('r02')) base += v.axel;
   if (v.jude && has('r04')) base += v.jude;
-  if (v.j3 && B.jug >= 3) base += v.j3;
-  if (v.jc) base += v.jc * B.jugCards;
-  if (has('r09') && B.jug >= 4) base += 4;
+  if (v.ps) base += v.ps * shotsBefore;
   var mult = elemMult(PLAYERS[d.p].el, PLAYERS[B.T.gk].el);
-  return { base: base, mult: mult, final: Math.round(base * mult) };
+  var vul = B.rvul > 0 ? 1.5 : 1;
+  return { base: base, mult: mult, vul: vul, final: Math.round(base * mult * vul) };
+}
+
+function cardCostB(c) {
+  var B = B_(), cost = cardCost(c);
+  if (B && has('r22') && !B.played && cost > 0) cost--;
+  return cost;
 }
 
 function playReason(c) {
-  var B = B_(), d = CARDS[c.id];
+  var B = B_();
   if (!B || B.over) return 'Fin del partido';
   if (CARDS[c.id].v.unplay) return 'No se puede jugar';
-  if (cardCost(c) > B.tp) return 'Te faltan TP';
-  if (d.t === 'tiro' && B.ball !== 'yo') return 'Necesitas el balón';
+  if (cardCostB(c) > B.tp) return 'Te faltan TP';
   return '';
-}
-
-function checkSteal(c) {
-  var B = B_(), I = B.intent;
-  if (B.ball !== 'rv' || !I || I.pos == null) return false;
-  if (B.ctl < effPos(I)) return false;
-  B.ball = 'yo'; B.stole = true; B.jug = 0; B.rimp = 0;
-  B.intent = { k: 'robado' };
-  if (c) { var v = cardV(c); if (v.cj) B.jug += v.cj; }
-  if (captain() === 'r04') { B.jug += 2; drawCards(1); }
-  if (has('r07')) B.rfat += 3;
-  pushFx({ k: 'steal' });
-  logB('Robas el balón');
-  return true;
 }
 
 function playCard(uid) {
@@ -317,19 +323,14 @@ function playCard(uid) {
   var c = B.hand[idx], d = CARDS[c.id], v = cardV(c);
   var why = playReason(c);
   if (why) { pushFx({ k: 'toast', t: why }); sfx('no'); playFx(); return; }
-  B.tp -= cardCost(c);
+  B.tp -= cardCostB(c);
+  B.played++;
   B.hand.splice(idx, 1);
   G.ui.sel = null;
   if (d.st) {
     var first = !B.seen[c.id]; B.seen[c.id] = 1;
     pushFx({ k: 'tech', who: d.p, tech: d.n, vid: (first && G.opts.video) ? d.vid : null, el: cardEl(c) });
   } else sfx('card');
-  if (v.jug) {
-    var extra = (has('r22') && d.t === 'jugada' && B.jugCards === 0) ? 1 : 0;
-    B.jug += v.jug + extra;
-  }
-  if (v.dbl) B.jug *= 2;
-  if (d.t === 'jugada') B.jugCards++;
   if (v.par) B.par += v.par;
   if (v.heal) B.kres = Math.min(B.kmax, B.kres + v.heal);
   if (v.tp) B.tp += v.tp;
@@ -337,54 +338,46 @@ function playCard(uid) {
   if (v.conc) B.conc += v.conc;
   if (v.fat) B.rfat += v.fat;
   if (v.parT) B.parT += v.parT;
-  if (v.ctl) { B.ctl += v.ctl; checkSteal(c); }
+  if (d.t === 'tiro') {
+    var times = B.dbl ? 2 : 1; B.dbl = 0;
+    for (var t = 0; t < times && !B.over; t++) doShot(c);
+  }
+  // efectos que preparan el siguiente tiro: van después para no gastarse en esta carta
+  if (v.oca) B.oca += v.oca;
+  if (v.dbl) B.dbl = 1;
+  if (v.vul) B.rvul += v.vul;
   if (v.draw) drawCards(v.draw);
-  if (d.t === 'tiro') doShot(c);
   if (v.agota || v.perm) B.exh.push(c); else B.disc.push(c);
   logB('Juegas ' + d.n + (c.up ? '+' : ''));
   afterAction();
 }
 
 function doShot(c) {
-  var B = B_(), v = cardV(c), sp = shotPower(c);
-  B.shots++;
-  var dmg = sp.final, absorbed = Math.min(B.rmuro, dmg);
-  B.rmuro -= absorbed; dmg -= absorbed;
-  B.rres -= dmg;
-  pushFx({ k: 'shot', dmg: dmg, absorbed: absorbed, mult: sp.mult });
-  if (B.rres <= 0) {
-    B.gYo++; G.run.stats.goals++;
-    B.rres = B.rmax; B.ball = 'rv'; B.jug = 0; B.intent = { k: 'saque' };
-    pushFx({ k: 'goal', me: true, who: CARDS[c.id].p });
-    logB('¡Gol!');
-    if (B.extra) B.over = 'win';
-  } else if (v.reb) {
-    B.jug = 0;
-    pushFx({ k: 'float', side: 'rv', t: 'Rebote', c: 'blue' });
-  } else {
-    B.ball = 'rv'; B.jug = 0; B.intent = { k: 'saque' };
-    pushFx({ k: 'float', side: 'rv', t: 'Parada', c: 'white' });
+  var B = B_(), v = cardV(c);
+  var hits = v.hits || 1;
+  for (var h = 0; h < hits && !B.over; h++) {
+    var sp = shotPower(c);
+    B.shots++; B.oca = 0;
+    var dmg = sp.final, absorbed = v.pierce ? 0 : Math.min(B.rmuro, dmg);
+    B.rmuro -= absorbed; dmg -= absorbed;
+    B.rres -= dmg;
+    pushFx({ k: 'shot', dmg: dmg, absorbed: absorbed, mult: sp.mult });
+    if (B.rres <= 0) {
+      B.gYo++; G.run.stats.goals++;
+      B.rres = B.rmax;
+      pushFx({ k: 'goal', me: true, who: CARDS[c.id].p });
+      logB('¡Gol!');
+      if (has('r09')) B.conc++;
+      if (v.gdraw) drawCards(v.gdraw);
+      if (B.extra) B.over = 'win';
+    }
   }
-}
-
-function useCambio(uid) {
-  var B = B_();
-  if (!B || G.busy || B.cambio || B.over) return;
-  var idx = -1; for (var i = 0; i < B.hand.length; i++) if (B.hand[i].u === uid) idx = i;
-  if (idx < 0) return;
-  var c = B.hand.splice(idx, 1)[0];
-  if (c.id === 'cansancio') B.exh.push(c); else B.disc.push(c);
-  B.cambio = true; G.ui.cambioMode = false; G.ui.sel = null;
-  drawCards(1);
-  sfx('card');
-  logB('Cambio');
-  afterAction();
 }
 
 function rivalShot(pow, el, who, tech) {
   var B = B_(), T = B.T;
   var fin = rivalShotValue(pow, el);
-  B.rfat = 0; B.rimp = 0;
+  B.rfat = 0;
   var blocked = Math.min(B.par, fin);
   B.par -= blocked;
   var rem = fin - blocked;
@@ -399,40 +392,33 @@ function rivalShot(pow, el, who, tech) {
     if (has('r10') && !B.erik) { B.erik = true; B.tpNext += 2; B.drawNext += 2; }
     if (B.extra) B.over = 'lose';
   }
-  B.ball = 'yo'; B.jug = 0;
 }
 
 function endTurn() {
   var B = B_();
   if (!B || G.busy || B.over) return;
-  G.busy = true; G.ui.sel = null; G.ui.cambioMode = false;
+  G.busy = true; G.ui.sel = null;
   sfx('tap');
-  B.hand.forEach(function (c) { delete c.fresh; B.disc.push(c); });
+  // el Cansancio que se queda en la mano desaparece
+  B.hand.forEach(function (c) { delete c.fresh; if (c.id === 'cansancio') B.exh.push(c); else B.disc.push(c); });
   B.hand = [];
   var I = B.intent, T = B.T;
-  if (B.ball === 'rv' && I.k === 'tiro') {
+  if (I.pow) {
     if (I.st) pushFx({ k: 'rtech', who: I.who, tech: I.tech, vid: (G.opts.video && I.vid && !B.seen['r_' + I.tech]) ? I.vid : null });
     if (I.st) B.seen['r_' + I.tech] = 1;
-    rivalShot(I.pow, I.el, I.who, I.tech);
-  } else if (B.ball === 'rv' && I.k === 'avance') {
+    for (var h = 0; h < (I.hits || 1) && !B.over; h++) rivalShot(I.pow, I.el, I.who, I.tech);
+    B.rimp = 0;
+  } else if (I.k === 'avance') {
     B.rimp += I.val;
-    pushFx({ k: 'float', side: 'me', t: 'Avanzan +' + I.val, c: 'red' });
-  } else if (B.ball === 'yo' && I.pres) {
-    if (I.tpDown) { B.tpNext -= I.tpDown; }
-    if (B.ctl < I.pres) {
-      B.ball = 'rv'; B.jug = 0;
-      pushFx({ k: 'lost' });
-      logB('Te roban el balón');
-      if (T.rasgo === 'hielo') B.tpNext -= 1;
-      if (I.contra) rivalShot(I.contra, PLAYERS[T.st].el, T.st, 'Contraataque');
-    } else {
-      pushFx({ k: 'float', side: 'me', t: 'Aguantas', c: 'blue' });
-    }
+    pushFx({ k: 'float', side: 'rv', t: 'Avanzan +' + I.val, c: 'red' });
+  } else if (I.k === 'presion') {
+    if (I.tpDown) { B.tpNext -= I.tpDown; pushFx({ k: 'float', side: 'me', t: '-' + I.tpDown + ' TP', c: 'red' }); }
   }
   if (I.cans) {
     for (var i = 0; i < I.cans; i++) B.disc.push({ u: 'x' + Date.now() + i, id: 'cansancio' });
-    pushFx({ k: 'float', side: 'me', t: '+1 Cansancio', c: 'red' });
+    pushFx({ k: 'float', side: 'me', t: '+' + I.cans + ' Cansancio', c: 'red' });
   }
+  if (B.rvul > 0) B.rvul--;
   if (!B.over && B.turn >= B.maxT && B.gYo !== B.gRv) B.over = B.gYo > B.gRv ? 'win' : 'lose';
   if (G.run.moral <= 0) B.over = 'lose';
   afterAction(true);
@@ -640,6 +626,7 @@ function saveOpts() { store(OPTS_KEY, G.opts); }
 
 function continueRun() {
   var r = load(SAVE_KEY);
+  if (!r || r.v !== 2) { forget(SAVE_KEY); G.screen = 'menu'; render(); return; }
   if (!r) return;
   G.run = r;
   if (r.battle) {
