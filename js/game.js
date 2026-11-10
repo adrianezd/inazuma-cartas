@@ -28,13 +28,13 @@ function has(pid) { return !!(G.run && G.run.team.indexOf(pid) >= 0); }
 function captain() { return G.run ? G.run.cap : null; }
 function newCard(id, up) { var r = G.run; r.uid = (r.uid || 1) + 1; return { u: 'k' + r.uid, id: id, up: !!up }; }
 function addCard(id, up) { var c = newCard(id, up); G.run.deck.push(c); return c; }
-function keeperMax() { return 20 + (has('r13') ? 6 : 0) + (has('r51') ? 10 : 0); }
+function keeperMax() { return 12 + (G.run.kBonus || 0) + (has('r13') ? 4 : 0) + (has('r51') ? 6 : 0); }
 var MY_KEEPER = 'r01';
 
 function newRun(capIdx) {
   var cap = CAPTAINS[capIdx];
   G.run = {
-    v: 2, cap: cap.id, team: BASE_TEAM.concat([cap.id]), deck: [], moral: 60, moralMax: 60, coins: 40,
+    v: 2, cap: cap.id, team: BASE_TEAM.concat([cap.id]), deck: [], moral: 40, moralMax: 40, coins: 40, kBonus: 0,
     act: 0, map: null, pos: null, uid: 1, removeCost: 60, lastTeams: [], battle: null, reward: null,
     shop: null, event: null, screen: 'map',
     stats: { wins: 0, goals: 0, against: 0, floors: 0, start: Date.now() }
@@ -124,21 +124,24 @@ function enterNode(k) {
    Cada turno: 3 TP y 5 cartas. Los tiros restan aguante al portero rival
    (primero se comen su muro); al llegar a 0 es gol. La Parada frena el tiro
    que anuncia el rival. Quien lleve más goles al final de los 8 turnos gana. */
+// Profundidad en la carrera: 0 en la primera casilla, 20 en el último jefe.
+function runDepth() {
+  var r = G.run, n = r.map && r.pos ? r.map.nodes[r.pos] : null;
+  return r.act * (MAP_ROWS + 1) + (n ? n.r : 0);
+}
+// Todos los rivales crecen un 6 % por casilla; las élites y los jefes, algo más.
 function scaleTeam(id, act, kind) {
-  var T = TEAMS[id], F = T.boss ? 1 : [1, 1.3, 1.6][act];
+  var T = TEAMS[id], depth = runDepth();
+  var F = 1 + depth * 0.06;
+  if (kind === 'elite') F += 0.15;
   var o = {}; for (var k in T) o[k] = T[k];
-  var s = function (x) { return Math.round(x * F); };
-  o.id = id; o.kind = kind;
+  var s = function (x) { return Math.max(1, Math.round(x * F)); };
+  o.id = id; o.kind = kind; o.depth = depth;
   o.res = s(T.res);
-  o.shot = T.shot.map(function (x) { return Math.round(s(x) * (T.boss ? 1.25 : 1.4)); });
-  o.spow = T.spow ? Math.round(T.spow * 1.2) : 0;
+  o.shot = T.shot.map(s);
   o.muro = T.muro.map(s);
-  if (kind === 'elite') {
-    o.res = Math.round(o.res * 1.3);
-    o.shot = o.shot.map(function (x) { return x + 2; });
-    o.muro = o.muro.map(function (x) { return x + 2; });
-  }
-  o.golpe = (kind === 'boss' ? 8 : kind === 'elite' ? 6 : 5) + act;
+  o.spow = T.spow ? s(T.spow) : 0;
+  o.golpe = (kind === 'boss' ? 5 : kind === 'elite' ? 4 : 3) + act;
   return o;
 }
 
@@ -159,9 +162,9 @@ function startBattle(kind) {
   var B = {
     tid: tid, kind: kind, T: T, turn: 0, maxT: 8, extra: false, gYo: 0, gRv: 0,
     par: 0, tp: 0, kmax: km, kres: km, rmax: T.res, rres: T.res, rmuro: 0,
-    conc: (has('r20') ? 2 : 0) + (has('r14') ? 1 : 0), oca: 0, dbl: 0, rvul: has('r07') ? 2 : 0,
+    conc: (has('r20') ? 1 : 0) + (has('r14') ? 1 : 0), oca: 0, dbl: 0, rvul: has('r07') ? 2 : 0,
     rfat: 0, rimp: 0, rconc: 0, parT: 0,
-    tpNext: has('r14') ? 1 : 0, drawNext: has('r15') ? 2 : 0,
+    tpNext: has('r14') ? 1 : 0, drawNext: (has('r15') ? 2 : 0) + (has('r20') ? 1 : 0),
     draw: shuffle(r.deck.map(function (c) { return { u: c.u, id: c.id, up: c.up }; })), hand: [], disc: [], exh: [],
     intent: null, shots: 0, played: 0, erik: false, rt: 0, calm: 0,
     seen: {}, over: null, log: []
@@ -203,13 +206,13 @@ function startTurn(first) {
   B.turn++;
   B.extra = B.turn > B.maxT;
   if (B.extra) {
-    B.kres = Math.max(1, B.kres - 4); B.rres = Math.max(1, B.rres - 4);
-    if (B.turn === B.maxT + 1) pushFx({ k: 'banner', t: 'Gol de oro', s: 'Quien marque gana. Los porteros pierden 4 de aguante cada turno.', c: 'gold' });
+    B.kres = Math.max(1, B.kres - 3); B.rres = Math.max(1, B.rres - 3);
+    if (B.turn === B.maxT + 1) pushFx({ k: 'banner', t: 'Gol de oro', s: 'Quien marque gana. Los porteros pierden 3 de aguante cada turno.', c: 'gold' });
   } else if (B.turn === 5 && !first) {
     pushFx({ k: 'banner', t: 'Segunda parte', s: '', c: 'blue' });
   }
   B.tp = Math.max(0, 3 + B.tpNext); B.tpNext = 0;
-  B.par = B.parT + (captain() === 'r08' ? 3 : 0);
+  B.par = B.parT + (captain() === 'r08' ? 2 : 0);
   B.shots = 0; B.played = 0; B.rmuro = 0;
   if (T.rasgo === 'nectar' && B.turn > 1) B.rconc++;
   if (T.rasgo === 'kageyama' && B.turn === 5) {
@@ -250,7 +253,7 @@ function rollIntent() {
   var I;
   // jefes
   if (rg === 'genesis') {
-    if (n % 3 === 0) I = { k: 'avance', val: 10, tech: 'Carga de Supernova', st: 1, who: T.st };
+    if (n % 3 === 0) I = { k: 'avance', val: Math.round(5 * (1 + T.depth * 0.06)), tech: 'Carga de Supernova', st: 1, who: T.st };
     else if (n % 3 === 1) I = shotIntent(T.spow, true);
     else I = Math.random() < 0.5 ? { k: 'muro', muro: rr(T.muro), tech: T.muroTech, who: T.gk } : shotIntent(rr(T.shot), false);
     return I;
@@ -279,7 +282,7 @@ function rollIntent() {
     I = { k: 'muro', muro: rr(T.muro) };
     if (T.muroTech) { I.tech = T.muroTech; I.st = 1; I.vid = T.muroVid; I.who = T.gk; }
   } else if (k === 'avance') {
-    I = { k: 'avance', val: ri(3, 5) + G.run.act + (rg === 'murdock' ? 3 : 0), who: T.st };
+    I = { k: 'avance', val: Math.round((ri(2, 3) + (rg === 'murdock' ? 2 : 0)) * (1 + T.depth * 0.06)), who: T.st };
   } else {
     I = { k: 'presion', tpDown: (rg === 'maldicion') ? 0 : 1, cans: (rg === 'maldicion' || rg === 'kageyama') ? 1 : 0, who: T.st };
     if (!I.tpDown && !I.cans) I.tpDown = 1;
@@ -292,7 +295,7 @@ function shotPower(c, extraShots) {
   var B = B_(), v = cardV(c), d = CARDS[c.id];
   var shotsBefore = B.shots + (extraShots || 0);
   var base = (v.pow || 0) + B.conc + B.oca;
-  if (captain() === 'r02' && shotsBefore === 0) base += 3;
+  if (captain() === 'r02' && shotsBefore === 0) base += 2;
   if (v.axel && has('r02')) base += v.axel;
   if (v.jude && has('r04')) base += v.jude;
   if (v.ps) base += v.ps * shotsBefore;
@@ -448,7 +451,7 @@ function finishBattle(win) {
   var r = G.run, B = r.battle;
   if (!win) {
     r.battle = null;
-    var pen = B.kind === 'elite' ? 15 : 12;
+    var pen = B.kind === 'elite' ? 10 : 8;
     if (B.kind !== 'boss') changeMoral(-pen);
     if (B.kind === 'boss' || r.moral <= 0) { endRun(false, B); return; }
     r.reward = { lost: true, pen: pen, coins: 0, cards: null, sign: null, score: B.gYo + ' - ' + B.gRv, team: B.tid };
@@ -457,6 +460,7 @@ function finishBattle(win) {
     return;
   }
   r.stats.wins++;
+  r.kBonus = (r.kBonus || 0) + 1;
   var coins = B.kind === 'boss' ? 90 : B.kind === 'elite' ? 40 : ri(16, 24);
   coins += Math.max(0, B.gYo - B.gRv) * 3;
   r.coins += coins;
@@ -465,7 +469,7 @@ function finishBattle(win) {
   if (B.kind === 'boss') {
     var bs = { royal: ['r13', 'r22'], zeus: ['r20', 'r51'] }[B.tid];
     if (bs) rw.sign = bs.filter(function (p) { return !has(p); });
-    changeMoral(15);
+    changeMoral(10);
   }
   r.battle = null;
   r.reward = rw;

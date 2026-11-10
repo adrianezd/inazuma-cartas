@@ -3,8 +3,9 @@
    Jugadores, sprites y escudos salen de la plantilla de Inazuma Run
    (roster-data.js) y se cargan desde inazumarun.es/assets. */
 
-var APP_VERSION = '0.2.0';
+var APP_VERSION = '0.3.0';
 var APP_NOTES = [
+  ['0.3.0', 'Empiezas con 7 cartas y números pequeños: menos aguante, tiros y paradas para todos. Los rivales se hacen más fuertes en cada casilla del mapa y tu portero gana 1 de aguante por cada victoria.'],
   ['0.2.0', 'Mucho más sencillo: empiezas solo con Chut y Parada, sin posesión, pases ni regates. Los efectos llegan con las cartas nuevas. Los rivales anuncian tiro, muro, avance o presión.'],
   ['0.1.0', 'Primera prueba: 3 capitanes, 3 actos con jefe, 30 cartas, fichajes, eventos, tienda y vídeos de supertécnicas.']
 ];
@@ -100,47 +101,47 @@ var RARITY_INFO = { B: 'Básica', C: 'Común', U: 'Poco común', R: 'Rara', S: '
    st: es supertécnica (anuncio grande) · vid: vídeo en assets/tecnicas */
 var CARDS = {
   // Básicas
-  chut:   { n: 'Chut', t: 'tiro', c: 1, r: 'B', p: 'r05', v: { pow: 6 }, u: { pow: 9 } },
-  parada: { n: 'Parada', t: 'defensa', c: 1, r: 'B', p: 'r01', v: { par: 5 }, u: { par: 8 } },
+  chut:   { n: 'Chut', t: 'tiro', c: 1, r: 'B', p: 'r05', v: { pow: 4 }, u: { pow: 6 } },
+  parada: { n: 'Parada', t: 'defensa', c: 1, r: 'B', p: 'r01', v: { par: 3 }, u: { par: 5 } },
 
   // De capitán
-  tornado_fuego: { n: 'Tornado de Fuego', t: 'tiro', c: 2, r: 'S', p: 'r02', v: { pow: 10, vul: 2 }, u: { pow: 13, vul: 3 }, st: 1, vid: 'tornado-de-fuego' },
-  espejismo:     { n: 'Espejismo de balón', t: 'tactica', c: 1, r: 'S', p: 'r04', v: { draw: 2, oca: 4 }, u: { draw: 2, oca: 4, c: 0 }, st: 1, vid: 'espejismo-de-balon' },
-  ventisca:      { n: 'Ventisca eterna', t: 'tiro', c: 2, r: 'S', p: 'r08', v: { pow: 9, par: 7 }, u: { pow: 12, par: 9 }, st: 1, vid: 'ventisca-eterna' },
+  tornado_fuego: { n: 'Tornado de Fuego', t: 'tiro', c: 2, r: 'S', p: 'r02', v: { pow: 7, vul: 2 }, u: { pow: 9, vul: 3 }, st: 1, vid: 'tornado-de-fuego' },
+  espejismo:     { n: 'Espejismo de balón', t: 'tactica', c: 1, r: 'S', p: 'r04', v: { draw: 2, oca: 3 }, u: { draw: 2, oca: 3, c: 0 }, st: 1, vid: 'espejismo-de-balon' },
+  ventisca:      { n: 'Ventisca eterna', t: 'tiro', c: 2, r: 'S', p: 'r08', v: { pow: 5, par: 4 }, u: { pow: 7, par: 6 }, st: 1, vid: 'ventisca-eterna' },
 
   // Recompensas: tiros
-  remate_dragon:  { n: 'Remate Dragón', t: 'tiro', c: 1, r: 'C', p: 'r05', v: { pow: 9 }, u: { pow: 12 }, st: 1, vid: 'remate-dragon' },
-  rodante:        { n: 'Disparo Rodante', t: 'tiro', c: 1, r: 'C', p: 'r46', v: { pow: 4, hits: 2 }, u: { pow: 6, hits: 2 } },
-  kung_fu:        { n: 'Cabezazo Kung Fu', t: 'tiro', c: 1, r: 'C', p: 'r47', v: { pow: 6, par: 4 }, u: { pow: 8, par: 6 }, st: 1, vid: 'cabezazo-kung-fu' },
-  zigzag:         { n: 'Zig Zag Explosivo', t: 'tiro', c: 1, r: 'C', p: 'r46', v: { pow: 7, pierce: 1 }, u: { pow: 10, pierce: 1 } },
-  entrada_huracan:{ n: 'Entrada huracán', t: 'tiro', c: 1, r: 'C', p: 'r03', v: { pow: 5, fat: 3 }, u: { pow: 7, fat: 4 }, st: 1, vid: 'entrada-huracan' },
-  tornado_dragon: { n: 'Tornado dragón', t: 'tiro', c: 2, r: 'U', p: 'r05', v: { pow: 12, axel: 8 }, u: { pow: 15, axel: 10 }, st: 1, vid: 'tornado-dragon' },
+  remate_dragon:  { n: 'Remate Dragón', t: 'tiro', c: 1, r: 'C', p: 'r05', v: { pow: 6 }, u: { pow: 8 }, st: 1, vid: 'remate-dragon' },
+  rodante:        { n: 'Disparo Rodante', t: 'tiro', c: 1, r: 'C', p: 'r46', v: { pow: 3, hits: 2 }, u: { pow: 4, hits: 2 } },
+  kung_fu:        { n: 'Cabezazo Kung Fu', t: 'tiro', c: 1, r: 'C', p: 'r47', v: { pow: 4, par: 3 }, u: { pow: 5, par: 4 }, st: 1, vid: 'cabezazo-kung-fu' },
+  zigzag:         { n: 'Zig Zag Explosivo', t: 'tiro', c: 1, r: 'C', p: 'r46', v: { pow: 5, pierce: 1 }, u: { pow: 7, pierce: 1 } },
+  entrada_huracan:{ n: 'Entrada huracán', t: 'tiro', c: 1, r: 'C', p: 'r03', v: { pow: 3, fat: 2 }, u: { pow: 5, fat: 3 }, st: 1, vid: 'entrada-huracan' },
+  tornado_dragon: { n: 'Tornado dragón', t: 'tiro', c: 2, r: 'U', p: 'r05', v: { pow: 8, axel: 5 }, u: { pow: 10, axel: 7 }, st: 1, vid: 'tornado-dragon' },
   // Recompensas: defensa
-  corte_giratorio:{ n: 'Corte Giratorio', t: 'defensa', c: 1, r: 'C', p: 'r12', v: { par: 6, oca: 3 }, u: { par: 8, oca: 4 }, st: 1, vid: 'corte-giratorio' },
-  defensa_huracan:{ n: 'Defensa Huracán', t: 'defensa', c: 2, r: 'U', p: 'r03', v: { par: 11, draw: 1 }, u: { par: 14, draw: 1 }, st: 1 },
-  el_muro:        { n: 'El Muro', t: 'defensa', c: 2, r: 'U', p: 'r06', v: { par: 15 }, u: { par: 20 }, st: 1, vid: 'el-muro' },
-  mano_magica:    { n: 'Mano Mágica', t: 'defensa', c: 2, r: 'U', p: 'r01', v: { par: 12, heal: 3 }, u: { par: 15, heal: 4 }, st: 1 },
-  mano_celestial: { n: 'Mano Celestial', t: 'defensa', c: 3, r: 'R', p: 'r01', v: { par: 20, heal: 6, agota: 1 }, u: { par: 20, heal: 6, agota: 1, c: 2 }, st: 1, vid: 'mano-celestial' },
+  corte_giratorio:{ n: 'Corte Giratorio', t: 'defensa', c: 1, r: 'C', p: 'r12', v: { par: 4, oca: 2 }, u: { par: 5, oca: 3 }, st: 1, vid: 'corte-giratorio' },
+  defensa_huracan:{ n: 'Defensa Huracán', t: 'defensa', c: 2, r: 'U', p: 'r03', v: { par: 7, draw: 1 }, u: { par: 9, draw: 1 }, st: 1 },
+  el_muro:        { n: 'El Muro', t: 'defensa', c: 2, r: 'U', p: 'r06', v: { par: 10 }, u: { par: 13 }, st: 1, vid: 'el-muro' },
+  mano_magica:    { n: 'Mano Mágica', t: 'defensa', c: 2, r: 'U', p: 'r01', v: { par: 8, heal: 2 }, u: { par: 10, heal: 3 }, st: 1 },
+  mano_celestial: { n: 'Mano Celestial', t: 'defensa', c: 3, r: 'R', p: 'r01', v: { par: 13, heal: 4, agota: 1 }, u: { par: 13, heal: 4, agota: 1, c: 2 }, st: 1, vid: 'mano-celestial' },
   // Recompensas: efectos
-  pase_hueco:     { n: 'Pase al hueco', t: 'tactica', c: 0, r: 'C', p: 'r48', v: { oca: 3, draw: 1 }, u: { oca: 5, draw: 1 } },
+  pase_hueco:     { n: 'Pase al hueco', t: 'tactica', c: 0, r: 'C', p: 'r48', v: { oca: 2, draw: 1 }, u: { oca: 3, draw: 1 } },
   toque:          { n: 'Toque rápido', t: 'tactica', c: 0, r: 'C', p: 'r48', v: { draw: 2, agota: 1 }, u: { draw: 3, agota: 1 } },
   presion_alta:   { n: 'Presión alta', t: 'tactica', c: 1, r: 'C', p: 'r06', v: { vul: 2, draw: 1 }, u: { vul: 3, draw: 1 } },
   pared:          { n: 'Pared', t: 'tactica', c: 1, r: 'U', p: 'r48', v: { dbl: 1, agota: 1 }, u: { dbl: 1, agota: 1, c: 0 } },
-  a_por_todas:    { n: '¡A por todas!', t: 'tactica', c: 1, r: 'U', p: 'r01', v: { conc: 2, perm: 1 }, u: { conc: 3, perm: 1 } },
+  a_por_todas:    { n: '¡A por todas!', t: 'tactica', c: 1, r: 'U', p: 'r01', v: { conc: 1, perm: 1 }, u: { conc: 2, perm: 1 } },
   coraje:         { n: 'Coraje', t: 'tactica', c: 0, r: 'U', p: 'r02', v: { tp: 2, agota: 1 }, u: { tp: 2, draw: 1, agota: 1 } },
-  neumaticos:     { n: 'Entrenamiento con neumáticos', t: 'tactica', c: 1, r: 'R', p: 'r01', v: { parT: 3, perm: 1 }, u: { parT: 5, perm: 1 } },
+  neumaticos:     { n: 'Entrenamiento con neumáticos', t: 'tactica', c: 1, r: 'R', p: 'r01', v: { parT: 2, perm: 1 }, u: { parT: 3, perm: 1 } },
 
   // De fichajes
-  fenix:        { n: 'Fénix', t: 'tiro', c: 2, r: 'F', p: 'r10', v: { pow: 11, gdraw: 2 }, u: { pow: 14, gdraw: 2 }, st: 1, vid: 'el-fenix' },
-  remate_tigre: { n: 'Remate del Tigre', t: 'tiro', c: 1, r: 'F', p: 'r09', v: { pow: 5, ps: 4 }, u: { pow: 7, ps: 5 }, st: 1 },
-  barrido:      { n: 'Barrido Defensivo', t: 'defensa', c: 1, r: 'F', p: 'r16', v: { par: 6, fat: 4 }, u: { par: 8, fat: 5 }, st: 1, vid: 'barrido-defensivo' },
+  fenix:        { n: 'Fénix', t: 'tiro', c: 2, r: 'F', p: 'r10', v: { pow: 7, gdraw: 2 }, u: { pow: 9, gdraw: 2 }, st: 1, vid: 'el-fenix' },
+  remate_tigre: { n: 'Remate del Tigre', t: 'tiro', c: 1, r: 'F', p: 'r09', v: { pow: 3, ps: 3 }, u: { pow: 4, ps: 4 }, st: 1 },
+  barrido:      { n: 'Barrido Defensivo', t: 'defensa', c: 1, r: 'F', p: 'r16', v: { par: 4, fat: 3 }, u: { par: 5, fat: 4 }, st: 1, vid: 'barrido-defensivo' },
   carrera:      { n: 'Carrera relámpago', t: 'tactica', c: 1, r: 'F', p: 'r15', v: { draw: 2, tpn: 1 }, u: { draw: 3, tpn: 1 }, st: 1 },
-  pinguino3:    { n: 'Pingüino emperador n.º 3', t: 'tiro', c: 2, r: 'F', p: 'r07', v: { pow: 13, jude: 8 }, u: { pow: 17, jude: 10 }, st: 1, vid: 'pinguino-emperador-n-3' },
-  canon:        { n: 'Cañón de Meteoritos', t: 'tiro', c: 3, r: 'F', p: 'r14', v: { pow: 22 }, u: { pow: 28 }, st: 1, vid: 'canon-de-meteoritos' },
-  escudo:       { n: 'Escudo de Fuerza', t: 'defensa', c: 1, r: 'F', p: 'r13', v: { par: 8 }, u: { par: 11 }, st: 1 },
-  pinguino2:    { n: 'Pingüino emperador n.º 2', t: 'tiro', c: 2, r: 'F', p: 'r22', v: { pow: 7, hits: 2 }, u: { pow: 9, hits: 2 }, st: 1 },
-  sabiduria:    { n: 'Sabiduría Divina', t: 'tiro', c: 3, r: 'F', p: 'r20', v: { pow: 20, vul: 1 }, u: { pow: 25, vul: 2 }, st: 1, vid: 'sabiduria-divina' },
-  muralla:      { n: 'Muralla Gigante', t: 'defensa', c: 2, r: 'F', p: 'r51', v: { par: 16 }, u: { par: 21 }, st: 1, vid: 'muralla-gigante' },
+  pinguino3:    { n: 'Pingüino emperador n.º 3', t: 'tiro', c: 2, r: 'F', p: 'r07', v: { pow: 8, jude: 5 }, u: { pow: 11, jude: 7 }, st: 1, vid: 'pinguino-emperador-n-3' },
+  canon:        { n: 'Cañón de Meteoritos', t: 'tiro', c: 3, r: 'F', p: 'r14', v: { pow: 14 }, u: { pow: 18 }, st: 1, vid: 'canon-de-meteoritos' },
+  escudo:       { n: 'Escudo de Fuerza', t: 'defensa', c: 1, r: 'F', p: 'r13', v: { par: 5 }, u: { par: 7 }, st: 1 },
+  pinguino2:    { n: 'Pingüino emperador n.º 2', t: 'tiro', c: 2, r: 'F', p: 'r22', v: { pow: 5, hits: 2 }, u: { pow: 6, hits: 2 }, st: 1 },
+  sabiduria:    { n: 'Sabiduría Divina', t: 'tiro', c: 3, r: 'F', p: 'r20', v: { pow: 13, vul: 1 }, u: { pow: 16, vul: 2 }, st: 1, vid: 'sabiduria-divina' },
+  muralla:      { n: 'Muralla Gigante', t: 'defensa', c: 2, r: 'F', p: 'r51', v: { par: 10 }, u: { par: 14 }, st: 1, vid: 'muralla-gigante' },
 
   // Estado
   cansancio: { n: 'Cansancio', t: 'estado', c: -1, r: 'B', p: null, v: { unplay: 1 }, u: { unplay: 1 } }
@@ -150,13 +151,13 @@ var POOL = ['remate_dragon', 'rodante', 'kung_fu', 'zigzag', 'entrada_huracan', 
   'corte_giratorio', 'defensa_huracan', 'el_muro', 'mano_magica', 'mano_celestial',
   'pase_hueco', 'toque', 'presion_alta', 'pared', 'a_por_todas', 'coraje', 'neumaticos'];
 
-var STARTER = ['chut', 'chut', 'chut', 'chut', 'chut', 'parada', 'parada', 'parada', 'parada'];
+var STARTER = ['chut', 'chut', 'chut', 'parada', 'parada', 'parada'];
 var BASE_TEAM = ['r01', 'r06', 'r03', 'r48', 'r05'];
 
 var CAPTAINS = [
-  { id: 'r02', titulo: 'El goleador', card: 'tornado_fuego', pas: 'Goleador', pasTxt: 'Tu primer tiro de cada turno suma 3.' },
+  { id: 'r02', titulo: 'El goleador', card: 'tornado_fuego', pas: 'Goleador', pasTxt: 'Tu primer tiro de cada turno suma 2.' },
   { id: 'r04', titulo: 'El estratega', card: 'espejismo', pas: 'Visión de juego', pasTxt: 'Robas 1 carta más cada turno.' },
-  { id: 'r08', titulo: 'El defensa', card: 'ventisca', pas: 'Doble alma', pasTxt: 'Empiezas cada turno con 3 de Parada.' }
+  { id: 'r08', titulo: 'El defensa', card: 'ventisca', pas: 'Doble alma', pasTxt: 'Empiezas cada turno con 2 de Parada.' }
 ];
 
 /* Fichajes: el jugador entra en tu equipo, da una pasiva y mete su carta en el mazo. */
@@ -167,34 +168,34 @@ var SIGNINGS = {
   r15: { card: 'carrera', pas: 'Pulmón', txt: 'Robas 2 cartas más en el primer turno de cada partido.' },
   r07: { card: 'pinguino3', pas: 'Provocador', txt: 'Cada partido empieza con el portero rival Desorientado 2 turnos.' },
   r14: { card: 'canon', pas: 'Estrella fugaz', txt: 'Empiezas cada partido con 1 de Concentración y 1 TP más en el primer turno.' },
-  r13: { card: 'escudo', pas: 'Guardameta', txt: 'Tu portero gana 6 de aguante máximo.' },
+  r13: { card: 'escudo', pas: 'Guardameta', txt: 'Tu portero gana 4 de aguante máximo.' },
   r22: { card: 'pinguino2', pas: 'Táctica imperial', txt: 'La primera carta que juegas cada turno cuesta 1 TP menos.' },
-  r20: { card: 'sabiduria', pas: 'Néctar divino', txt: 'Empiezas cada partido con 2 de Concentración.' },
-  r51: { card: 'muralla', pas: 'Muralla', txt: 'Tu portero gana 10 de aguante máximo.' }
+  r20: { card: 'sabiduria', pas: 'Néctar divino', txt: 'Empiezas cada partido con 1 de Concentración y tu primer turno roba 1 carta más.' },
+  r51: { card: 'muralla', pas: 'Muralla', txt: 'Tu portero gana 6 de aguante máximo.' }
 };
 var SIGN_POOL = ['r10', 'r09', 'r16', 'r15', 'r07', 'r14'];
 
 /* Equipos rivales. Valores del acto 1; ver scaleTeam en game.js.
    res: aguante del portero · shot: potencia de tiro · muro: bloqueo de su portero */
 var TEAMS = {
-  occult:   { n: 'Occult', esc: 'occult.png', gk: 'r80', st: 'r82', tech: 'Tiro Fantasma', vid: 'tiro-fantasma', res: 26, shot: [7, 9], muro: [5, 7], rasgo: 'maldicion' },
-  wild:     { n: 'Wild', esc: 'wild.webp', gk: 'r83', st: 'r91', tech: 'Remate Tarzán', res: 24, shot: [8, 11], muro: [3, 5], rasgo: 'salvaje' },
-  otaku:    { n: 'Otaku', esc: 'otaku.png', gk: 'r381', st: 'r385', tech: 'Combo Perfecto', res: 22, shot: [6, 8], muro: [4, 6], rasgo: 'bolafalsa' },
-  farm:     { n: 'Farm', esc: 'farm.png', gk: 'r164', st: 'r566', tech: 'Tiro cegador', res: 32, shot: [6, 9], muro: [5, 7], rasgo: 'aguante' },
-  shuriken: { n: 'Shuriken', esc: 'shuriken.png', gk: 'r557', st: 'r163', tech: 'Bola de Fango', res: 30, shot: [8, 11], muro: [6, 8], rasgo: 'ninja' },
-  brain:    { n: 'Brain', esc: 'brain.webp', gk: 'r151', st: 'r157', tech: 'Remate Misil', res: 28, shot: [8, 10], muro: [7, 10], rasgo: 'escaner' },
-  kirkwood: { n: 'Kirkwood', esc: 'kirkwood.png', gk: 'r543', st: 'r238', tech: 'Tiro Balista', res: 28, shot: [8, 10], muro: [4, 6], rasgo: 'murdock' },
-  geminis:  { n: 'Tormenta de Géminis', esc: 'tormenta-de-geminis.png', gk: 'r184', st: 'r409', tech: 'Astro remate', vid: 'astrorremate', res: 30, shot: [9, 11], muro: [5, 7], rasgo: 'alius' },
-  polvo:    { n: 'Polvo de Diamante', esc: 'polvo-de-diamantes.png', gk: 'r182', st: 'r17', tech: 'Balón Iceberg', vid: 'balon-iceberg', res: 28, shot: [8, 10], muro: [6, 8], rasgo: 'hielo' },
-  prominence:{ n: 'Prominence', esc: 'prominence.png', gk: 'r179', st: 'r19', tech: 'Llamarada Atómica', vid: 'llamarada-atomica', res: 24, shot: [10, 12], muro: [3, 5], rasgo: 'llamas' },
-  epsilon:  { n: 'Épsilon', esc: 'epsilon.png', gk: 'r54', st: 'r455', tech: 'Remate de Gaia', res: 30, shot: [9, 11], muro: [6, 8], rasgo: 'alius' },
+  occult:   { n: 'Occult', esc: 'occult.png', gk: 'r80', st: 'r82', tech: 'Tiro Fantasma', vid: 'tiro-fantasma', res: 14, shot: [4, 5], muro: [2, 3], rasgo: 'maldicion' },
+  wild:     { n: 'Wild', esc: 'wild.webp', gk: 'r83', st: 'r91', tech: 'Remate Tarzán', res: 13, shot: [5, 6], muro: [1, 2], rasgo: 'salvaje' },
+  otaku:    { n: 'Otaku', esc: 'otaku.png', gk: 'r381', st: 'r385', tech: 'Combo Perfecto', res: 12, shot: [3, 5], muro: [2, 3], rasgo: 'bolafalsa' },
+  farm:     { n: 'Farm', esc: 'farm.png', gk: 'r164', st: 'r566', tech: 'Tiro cegador', res: 17, shot: [3, 5], muro: [2, 4], rasgo: 'aguante' },
+  shuriken: { n: 'Shuriken', esc: 'shuriken.png', gk: 'r557', st: 'r163', tech: 'Bola de Fango', res: 16, shot: [4, 6], muro: [3, 4], rasgo: 'ninja' },
+  brain:    { n: 'Brain', esc: 'brain.webp', gk: 'r151', st: 'r157', tech: 'Remate Misil', res: 15, shot: [4, 6], muro: [3, 5], rasgo: 'escaner' },
+  kirkwood: { n: 'Kirkwood', esc: 'kirkwood.png', gk: 'r543', st: 'r238', tech: 'Tiro Balista', res: 15, shot: [4, 6], muro: [2, 3], rasgo: 'murdock' },
+  geminis:  { n: 'Tormenta de Géminis', esc: 'tormenta-de-geminis.png', gk: 'r184', st: 'r409', tech: 'Astro remate', vid: 'astrorremate', res: 16, shot: [5, 6], muro: [2, 4], rasgo: 'alius' },
+  polvo:    { n: 'Polvo de Diamante', esc: 'polvo-de-diamantes.png', gk: 'r182', st: 'r17', tech: 'Balón Iceberg', vid: 'balon-iceberg', res: 15, shot: [4, 6], muro: [3, 4], rasgo: 'hielo' },
+  prominence:{ n: 'Prominence', esc: 'prominence.png', gk: 'r179', st: 'r19', tech: 'Llamarada Atómica', vid: 'llamarada-atomica', res: 13, shot: [5, 7], muro: [1, 3], rasgo: 'llamas' },
+  epsilon:  { n: 'Épsilon', esc: 'epsilon.png', gk: 'r54', st: 'r455', tech: 'Remate de Gaia', res: 16, shot: [5, 6], muro: [3, 4], rasgo: 'alius' },
   // Jefes (valores fijos, no se escalan)
-  royal:    { n: 'Royal Academy', esc: 'royal-academy.png', gk: 'r13', st: 'r22', tech: 'Tiro', res: 44, shot: [9, 12], muro: [6, 9], rasgo: 'kageyama', boss: 1,
-              stech: 'Pingüino emperador n.º 2', spow: 17, muroTech: 'Escudo de Fuerza' },
-  zeus:     { n: 'Zeus', esc: 'zeus.png', gk: 'r51', st: 'r20', tech: 'Tiro', res: 56, shot: [11, 14], muro: [9, 12], rasgo: 'nectar', boss: 1,
-              stech: 'Sabiduría Divina', spow: 22, vid: 'sabiduria-divina', muroTech: 'Muralla Gigante', muroVid: 'muralla-gigante' },
-  genesis:  { n: 'Genesis', esc: 'genesis.png', gk: 'r110', st: 'r150', tech: 'Tiro', res: 66, shot: [12, 15], muro: [10, 13], rasgo: 'genesis', boss: 1,
-              stech: 'Supernova', spow: 26, vid: 'supernova', muroTech: 'Muro Dimensional' }
+  royal:    { n: 'Royal Academy', esc: 'royal-academy.png', gk: 'r13', st: 'r22', tech: 'Tiro', res: 21, shot: [5, 7], muro: [3, 4], rasgo: 'kageyama', boss: 1,
+              stech: 'Pingüino emperador n.º 2', spow: 10, muroTech: 'Escudo de Fuerza' },
+  zeus:     { n: 'Zeus', esc: 'zeus.png', gk: 'r51', st: 'r20', tech: 'Tiro', res: 24, shot: [5, 7], muro: [3, 5], rasgo: 'nectar', boss: 1,
+              stech: 'Sabiduría Divina', spow: 10, vid: 'sabiduria-divina', muroTech: 'Muralla Gigante', muroVid: 'muralla-gigante' },
+  genesis:  { n: 'Genesis', esc: 'genesis.png', gk: 'r110', st: 'r150', tech: 'Tiro', res: 27, shot: [6, 8], muro: [4, 6], rasgo: 'genesis', boss: 1,
+              stech: 'Supernova', spow: 11, vid: 'supernova', muroTech: 'Muro Dimensional' }
 };
 
 var RASGOS = {

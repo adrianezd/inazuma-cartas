@@ -389,7 +389,7 @@ function viewReward() {
       '<div class="center"><button class="btn primary" data-a="skipcards">Seguir</button></div></div>';
   }
   var h = '<div class="screen reward"><header class="win-head">' + crestImg('raimon.webp') + '<div><small>Victoria</small><b>' + rw.score + '</b><span>contra ' + esc(T.n) + '</span></div>' + crestImg(T.esc) + '</header>' +
-    '<p class="center gain"><i>' + ICON.coin + '</i>+' + rw.coins + ' monedas' + (rw.boss ? ' · +15 Moral' : '') + '</p>';
+    '<p class="center gain"><i>' + ICON.coin + '</i>+' + rw.coins + ' monedas' + (rw.boss ? ' · +10 Moral' : '') + ' · Portero +1 aguante</p>';
   if (rw.sign && rw.sign.length) {
     h += '<h3 class="center">' + (rw.boss ? 'Ficha a una estrella rival' : 'Fichaje') + '</h3><div class="signs">' + rw.sign.map(signHTML).join('') + '</div>' +
       '<div class="center"><button class="btn ghost" data-a="skipsign">Saltar</button></div>';
@@ -554,8 +554,9 @@ function modalHelp() {
     helpRow(ICON.hand, 'Parar', 'La Parada frena el tiro que anuncia el rival antes de tocar el aguante de tu portero. Se pierde al empezar tu siguiente turno. Si tu portero llega a 0, te marcan.') +
     helpRow(ICON.shield, 'El rival', 'Siempre ves su intención: Tiro, Muro, Avance (su próximo tiro suma más) o Presión (te quita TP o te mete Cansancio).') +
     helpRow(ICON.rest, 'Elementos', 'Fuego gana a Bosque, Bosque a Viento, Viento a Montaña y Montaña a Fuego. Con ventaja el tiro vale x1.5 y con desventaja x0.75.') +
+    helpRow(ICON.team, 'Crecer', 'Los rivales se hacen más fuertes en cada casilla del mapa. Tú creces con cartas nuevas, mejoras, fichajes y +1 de aguante para tu portero por cada victoria.') +
     helpRow(ICON.up, 'Efectos', 'Las cartas que ganas traen efectos: Concentración (todos tus tiros suman más), Desorientado (tus tiros x1.5), Próximo tiro, Rival cansado y más.') +
-    helpRow(ICON.heart, 'Moral', 'Es tu vida en toda la carrera. Cada gol encajado te quita Moral, y perder un partido te quita 12, o 15 contra una élite. Si llega a 0 o pierdes contra un jefe, quedas eliminado.') +
+    helpRow(ICON.heart, 'Moral', 'Es tu vida en toda la carrera. Cada gol encajado te quita Moral, y perder un partido te quita 8, o 10 contra una élite. Si llega a 0 o pierdes contra un jefe, quedas eliminado.') +
   '</div>';
 }
 function helpRow(ic, t, d) { return '<div class="hrow"><i>' + ic + '</i><div><b>' + t + '</b><p>' + d + '</p></div></div>'; }
