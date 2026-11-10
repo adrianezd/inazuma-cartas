@@ -1,0 +1,12 @@
+{
+  "name": "Inazuma Cartas",
+  "short_name": "Inazuma Cartas",
+  "description": "Roguelike de cartas de Inazuma Eleven. Fan game no oficial.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070d1f",
+  "theme_color": "#070d1f",
+  "lang": "es",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
